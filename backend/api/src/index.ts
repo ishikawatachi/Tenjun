@@ -13,6 +13,7 @@ import { errorHandler } from './middleware/errorHandler.middleware';
 import authRoutes from './routes/auth.routes';
 import threatModelsRoutes from './routes/threatModels.routes';
 import analysisRoutes from './routes/analysis.routes';
+import webhookRoutes from './routes/webhook.routes';
 
 /**
  * Initialize Express application
@@ -135,6 +136,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use('/api/auth', authRoutes);
 app.use('/api/threat-models', threatModelsRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 /**
  * Root endpoint
