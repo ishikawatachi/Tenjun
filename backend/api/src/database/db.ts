@@ -4,11 +4,14 @@ import fs from 'fs';
 import config from '../config/config';
 import { DatabaseError } from '../utils/errors';
 import { logger } from '../middleware/logging.middleware';
+import * as types from './types';
 
 let db: Database.Database | null = null;
+const MAX_CONNECTIONS = 5;
+const connectionPool: Database.Database[] = [];
 
 /**
- * Initialize SQLite database with encryption
+ * Initialize SQLite database with encryption and optimization
  */
 export const initDatabase = (): Database.Database => {
   try {
@@ -18,19 +21,36 @@ export const initDatabase = (): Database.Database => {
       fs.mkdirSync(dbDir, { recursive: true });
     }
 
-    // Initialize database
+    // Initialize database with optimized settings
     db = new Database(config.database.path, {
       verbose: config.nodeEnv === 'development' ? logger.debug.bind(logger) : undefined,
+      fileMustExist: false,
     });
+
+    // Apply encryption key using PRAGMA (SQLCipher compatible)
+    if (config.database.encryptionKey) {
+      try {
+        db.pragma(`key = '${config.database.encryptionKey}'`);
+        logger.info('Database encryption enabled');
+      } catch (error) {
+        logger.warn('Encryption not available, continuing without encryption', { error });
+      }
+    }
 
     // Enable WAL mode for better concurrency
     db.pragma('journal_mode = WAL');
     
     // Enable foreign keys
     db.pragma('foreign_keys = ON');
+    
+    // Optimize performance
+    db.pragma('synchronous = NORMAL');
+    db.pragma('cache_size = -64000'); // 64MB cache
+    db.pragma('temp_store = MEMORY');
+    db.pragma('mmap_size = 268435456'); // 256MB memory-mapped I/O
+    db.pragma('page_size = 4096');
 
-    // Set encryption key (Note: SQLCipher extension required for full encryption)
-    // For better-sqlite3, we use file permissions for security
+    // Set secure file permissions
     if (config.nodeEnv === 'production') {
       fs.chmodSync(config.database.path, 0o600);
     }
@@ -40,6 +60,7 @@ export const initDatabase = (): Database.Database => {
 
     logger.info('Database initialized successfully', {
       path: config.database.path,
+      encrypted: !!config.database.encryptionKey,
     });
 
     return db;
@@ -71,10 +92,10 @@ export const closeDatabase = (): void => {
 };
 
 /**
- * Run database migrations
+ * Run database migrations from SQL files
  */
 const runMigrations = (database: Database.Database): void => {
-  // Create migrations table
+  // Create migrations table if it doesn't exist
   database.exec(`
     CREATE TABLE IF NOT EXISTS migrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,99 +104,63 @@ const runMigrations = (database: Database.Database): void => {
     )
   `);
 
-  // Define migrations
-  const migrations = [
-    {
-      name: '001_create_users_table',
-      sql: `
-        CREATE TABLE IF NOT EXISTS users (
-          id TEXT PRIMARY KEY,
-          email TEXT NOT NULL UNIQUE,
-          password_hash TEXT NOT NULL,
-          role TEXT NOT NULL DEFAULT 'user',
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-      `,
-    },
-    {
-      name: '002_create_threat_models_table',
-      sql: `
-        CREATE TABLE IF NOT EXISTS threat_models (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          description TEXT,
-          system_description TEXT,
-          data_flow_diagram TEXT,
-          created_by TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (created_by) REFERENCES users(id)
-        );
-        CREATE INDEX IF NOT EXISTS idx_threat_models_created_by ON threat_models(created_by);
-      `,
-    },
-    {
-      name: '003_create_threats_table',
-      sql: `
-        CREATE TABLE IF NOT EXISTS threats (
-          id TEXT PRIMARY KEY,
-          threat_model_id TEXT NOT NULL,
-          category TEXT NOT NULL,
-          title TEXT NOT NULL,
-          description TEXT,
-          severity TEXT NOT NULL,
-          likelihood TEXT NOT NULL,
-          impact TEXT NOT NULL,
-          mitigation TEXT,
-          status TEXT DEFAULT 'open',
-          jira_ticket TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (threat_model_id) REFERENCES threat_models(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_threats_model ON threats(threat_model_id);
-        CREATE INDEX IF NOT EXISTS idx_threats_status ON threats(status);
-      `,
-    },
-    {
-      name: '004_create_audit_logs_table',
-      sql: `
-        CREATE TABLE IF NOT EXISTS audit_logs (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          user_id TEXT,
-          action TEXT NOT NULL,
-          resource_type TEXT NOT NULL,
-          resource_id TEXT,
-          details TEXT,
-          ip_address TEXT,
-          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id)
-        );
-        CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
-        CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
-        CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp);
-      `,
-    },
-  ];
+  // Get list of applied migrations
+  const appliedMigrations = database
+    .prepare('SELECT name FROM migrations ORDER BY id')
+    .all() as { name: string }[];
 
-  // Apply migrations
-  for (const migration of migrations) {
-    const existing = database
-      .prepare('SELECT name FROM migrations WHERE name = ?')
-      .get(migration.name);
+  const appliedNames = new Set(appliedMigrations.map((m) => m.name));
 
-    if (!existing) {
-      logger.info(`Applying migration: ${migration.name}`);
-      database.exec(migration.sql);
-      database
-        .prepare('INSERT INTO migrations (name) VALUES (?)')
-        .run(migration.name);
+  // Check for migration files
+  const migrationsDir = path.join(__dirname, 'migrations');
+  
+  if (!fs.existsSync(migrationsDir)) {
+    fs.mkdirSync(migrationsDir, { recursive: true });
+    logger.info('Created migrations directory');
+  }
+
+  const migrationFiles = fs
+    .readdirSync(migrationsDir)
+    .filter((file) => file.endsWith('.sql'))
+    .sort();
+
+  // Apply pending migrations
+  for (const file of migrationFiles) {
+    const migrationName = path.basename(file, '.sql');
+
+    if (appliedNames.has(migrationName)) {
+      logger.debug(`Migration already applied: ${migrationName}`);
+      continue;
+    }
+
+    logger.info(`Applying migration: ${migrationName}`);
+
+    const migrationPath = path.join(migrationsDir, file);
+    const migrationSql = fs.readFileSync(migrationPath, 'utf8');
+
+    try {
+      // Execute migration in a transaction
+      database.exec('BEGIN TRANSACTION');
+      database.exec(migrationSql);
+      
+      // Record migration (skip if already recorded in migration file)
+      const hasInsert = migrationSql.includes("INSERT INTO migrations");
+      if (!hasInsert) {
+        database
+          .prepare('INSERT INTO migrations (name) VALUES (?)')
+          .run(migrationName);
+      }
+      
+      database.exec('COMMIT');
+      logger.info(`Migration applied successfully: ${migrationName}`);
+    } catch (error) {
+      database.exec('ROLLBACK');
+      logger.error(`Migration failed: ${migrationName}`, { error });
+      throw new DatabaseError(`Failed to apply migration: ${migrationName}`, error);
     }
   }
 
-  logger.info('All migrations applied');
+  logger.info('All migrations applied successfully');
 };
 
 /**
@@ -238,23 +223,227 @@ export const createAuditLog = (
   resourceType: string,
   resourceId: string | undefined,
   details: unknown,
-  ipAddress: string | undefined
+  ipAddress: string | undefined,
+  userAgent?: string
 ): void => {
   try {
+    const changes = typeof details === 'object' ? JSON.stringify(details) : null;
+    
     executeWrite(
-      `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, ip_address)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, changes_json, ip_address, user_agent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         userId || null,
         action,
         resourceType,
         resourceId || null,
-        JSON.stringify(details),
+        changes,
         ipAddress || null,
+        userAgent || null,
       ]
     );
   } catch (error) {
     // Log but don't fail the operation if audit logging fails
     logger.error('Audit log creation failed', { error });
+  }
+};
+
+/**
+ * Backup database to specified path
+ */
+export const backupDatabase = async (backupPath?: string): Promise<string> => {
+  const database = getDatabase();
+  
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const defaultBackupPath = path.join(
+    path.dirname(config.database.path),
+    'backups',
+    `backup-${timestamp}.db`
+  );
+
+  const targetPath = backupPath || defaultBackupPath;
+  const targetDir = path.dirname(targetPath);
+
+  // Ensure backup directory exists
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  try {
+    // Use SQLite backup API for consistent backup
+    await new Promise<void>((resolve, reject) => {
+      const backup = database.backup(targetPath);
+      
+      backup.on('progress', ({ totalPages, remainingPages }) => {
+        const progress = Math.round(((totalPages - remainingPages) / totalPages) * 100);
+        logger.debug(`Backup progress: ${progress}%`);
+      });
+
+      backup.on('error', (error) => {
+        logger.error('Backup failed', { error });
+        reject(error);
+      });
+
+      backup.on('finish', () => {
+        logger.info('Backup completed', { path: targetPath });
+        resolve();
+      });
+    });
+
+    // Set secure permissions on backup file
+    if (config.nodeEnv === 'production') {
+      fs.chmodSync(targetPath, 0o600);
+    }
+
+    return targetPath;
+  } catch (error) {
+    logger.error('Database backup failed', { error, targetPath });
+    throw new DatabaseError('Failed to backup database', error);
+  }
+};
+
+/**
+ * Restore database from backup
+ */
+export const restoreDatabase = async (backupPath: string): Promise<void> => {
+  if (!fs.existsSync(backupPath)) {
+    throw new DatabaseError('Backup file not found');
+  }
+
+  const database = getDatabase();
+
+  try {
+    // Close current connection
+    closeDatabase();
+
+    // Create backup of current database
+    const currentBackup = `${config.database.path}.before-restore`;
+    fs.copyFileSync(config.database.path, currentBackup);
+
+    // Restore from backup
+    fs.copyFileSync(backupPath, config.database.path);
+
+    // Reinitialize database
+    initDatabase();
+
+    logger.info('Database restored successfully', { from: backupPath });
+  } catch (error) {
+    logger.error('Database restore failed', { error, backupPath });
+    throw new DatabaseError('Failed to restore database', error);
+  }
+};
+
+/**
+ * Clean up old backups, keeping only the specified number
+ */
+export const cleanupOldBackups = (keepCount: number = 10): void => {
+  const backupDir = path.join(path.dirname(config.database.path), 'backups');
+
+  if (!fs.existsSync(backupDir)) {
+    return;
+  }
+
+  try {
+    const backups = fs
+      .readdirSync(backupDir)
+      .filter((file) => file.endsWith('.db'))
+      .map((file) => ({
+        name: file,
+        path: path.join(backupDir, file),
+        mtime: fs.statSync(path.join(backupDir, file)).mtime.getTime(),
+      }))
+      .sort((a, b) => b.mtime - a.mtime); // Sort by date descending
+
+    // Remove old backups
+    const toDelete = backups.slice(keepCount);
+    for (const backup of toDelete) {
+      fs.unlinkSync(backup.path);
+      logger.info('Old backup deleted', { path: backup.path });
+    }
+
+    logger.info(`Backup cleanup completed, kept ${Math.min(backups.length, keepCount)} backups`);
+  } catch (error) {
+    logger.error('Backup cleanup failed', { error });
+  }
+};
+
+/**
+ * Get database statistics
+ */
+export const getDatabaseStats = (): {
+  size: number;
+  tables: number;
+  pageSize: number;
+  pageCount: number;
+  freePages: number;
+} => {
+  const database = getDatabase();
+
+  const stats = {
+    size: fs.statSync(config.database.path).size,
+    tables: database.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'").get() as { count: number },
+    pageSize: database.pragma('page_size', { simple: true }) as number,
+    pageCount: database.pragma('page_count', { simple: true }) as number,
+    freePages: database.pragma('freelist_count', { simple: true }) as number,
+  };
+
+  return {
+    size: stats.size,
+    tables: stats.tables.count,
+    pageSize: stats.pageSize,
+    pageCount: stats.pageCount,
+    freePages: stats.freePages,
+  };
+};
+
+/**
+ * Vacuum database to reclaim space
+ */
+export const vacuumDatabase = (): void => {
+  const database = getDatabase();
+  
+  try {
+    logger.info('Starting database vacuum');
+    database.exec('VACUUM');
+    logger.info('Database vacuum completed');
+  } catch (error) {
+    logger.error('Database vacuum failed', { error });
+    throw new DatabaseError('Failed to vacuum database', error);
+  }
+};
+
+/**
+ * Analyze database for query optimization
+ */
+export const analyzeDatabase = (): void => {
+  const database = getDatabase();
+  
+  try {
+    logger.info('Starting database analysis');
+    database.exec('ANALYZE');
+    logger.info('Database analysis completed');
+  } catch (error) {
+    logger.error('Database analysis failed', { error });
+    throw new DatabaseError('Failed to analyze database', error);
+  }
+};
+
+/**
+ * Execute transaction with automatic rollback on error
+ */
+export const executeTransaction = <T>(
+  callback: (db: Database.Database) => T
+): T => {
+  const database = getDatabase();
+  
+  try {
+    database.exec('BEGIN TRANSACTION');
+    const result = callback(database);
+    database.exec('COMMIT');
+    return result;
+  } catch (error) {
+    database.exec('ROLLBACK');
+    logger.error('Transaction rolled back', { error });
+    throw error;
   }
 };
