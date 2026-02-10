@@ -1,0 +1,227 @@
+version: '3.8'
+
+services:
+  # Node.js API Backend Service
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: threat-model-api
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_PATH=/data/threat-model.db
+      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY=24h
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - db-data:/data
+      - api-logs:/var/log/app
+    networks:
+      - threat-model-network
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Python Analysis Service
+  analysis:
+    build:
+      context: ./backend/analysis
+      dockerfile: Dockerfile
+    container_name: threat-model-analysis
+    ports:
+      - "3002:3002"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+      - PORT=3002
+      - DB_PATH=/data/threat-model.db
+      - DB_ENCRYPTION_KEY=${DB_ENCRYPTION_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+      - MAX_TOKENS=${MAX_TOKENS:-4096}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - db-data:/data:ro
+      - analysis-logs:/var/log/app
+      - analysis-cache:/app/cache
+    networks:
+      - threat-model-network
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 2G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Database Initialization Service
+  db-init:
+    image: alpine:latest
+    container_name: threat-model-db-init
+    volumes:
+      - db-data:/data
+      - db-backups:/backups
+      - ./infra/docker/init-db.sh:/init-db.sh:ro
+    command: sh /init-db.sh
+    networks:
+      - threat-model-network
+    environment:
+      - DB_PATH=/data/threat-model.db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Database Backup Service
+  db-backup:
+    image: alpine:latest
+    container_name: threat-model-db-backup
+    volumes:
+      - db-data:/data:ro
+      - db-backups:/backups
+      - ./infra/docker/backup-db.sh:/backup-db.sh:ro
+    command: sh -c "while true; do sh /backup-db.sh; sleep 86400; done"
+    networks:
+      - threat-model-network
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # React Frontend Build Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost/api}
+        - REACT_APP_ANALYSIS_URL=${REACT_APP_ANALYSIS_URL:-http://localhost/analysis}
+    container_name: threat-model-frontend
+    volumes:
+      - frontend-build:/app/build
+    networks:
+      - threat-model-network
+    command: echo "Frontend build completed"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: threat-model-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/docker/ssl:/etc/nginx/ssl:ro
+      - frontend-build:/usr/share/nginx/html:ro
+      - nginx-logs:/var/log/nginx
+      - nginx-cache:/var/cache/nginx
+    networks:
+      - threat-model-network
+    depends_on:
+      - api
+      - analysis
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DB_DATA_PATH:-./data/db}
+  db-backups:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DB_BACKUP_PATH:-./data/backups}
+  api-logs:
+    driver: local
+  analysis-logs:
+    driver: local
+  analysis-cache:
+    driver: local
+  frontend-build:
+    driver: local
+  nginx-logs:
+    driver: local
+  nginx-cache:
+    driver: local
+
+networks:
+  threat-model-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

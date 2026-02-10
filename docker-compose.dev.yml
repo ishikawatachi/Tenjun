@@ -1,0 +1,51 @@
+# Docker Compose override for development
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  api:
+    build:
+      target: builder
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3001"
+      - "9229:9229"  # Node.js debugger
+    command: npm run dev
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  analysis:
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - LOG_LEVEL=debug
+    volumes:
+      - ./backend/analysis:/app
+      - /app/venv
+    command: python app.py
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+
+  frontend:
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    command: npm start
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  nginx:
+    volumes:
+      - ./infra/docker/nginx.dev.conf:/etc/nginx/nginx.conf:ro

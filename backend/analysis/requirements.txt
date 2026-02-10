@@ -1,0 +1,7 @@
+flask==3.1.2
+pyyaml==6.0.3
+tenacity==9.1.4
+anthropic==0.79.0
+openai==2.20.0
+gunicorn==21.2.0
+python-dotenv==1.0.1
