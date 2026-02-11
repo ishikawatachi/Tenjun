@@ -1,0 +1,67 @@
+/**
+ * ComplianceMapper Styles
+ */
+
+.container {
+  width: 100%;
+  padding: 0;
+}
+
+.header {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.summary {
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-8));
+}
+
+.tableContainer {
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-8));
+}
+
+.table {
+  min-width: 800px;
+}
+
+.clickableRow {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickableRow:hover {
+  background-color: light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-6)) !important;
+}
+
+.clickableRow:active {
+  background-color: light-dark(var(--mantine-color-blue-1), var(--mantine-color-dark-5)) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .table {
+    font-size: 0.875rem;
+  }
+  
+  .summary {
+    overflow-x: auto;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .clickableRow:hover {
+    filter: brightness(1.1);
+  }
+}
+
+/* Print styles */
+@media print {
+  .header,
+  .clickableRow {
+    cursor: default;
+  }
+  
+  .clickableRow:hover {
+    background-color: transparent !important;
+  }
+}

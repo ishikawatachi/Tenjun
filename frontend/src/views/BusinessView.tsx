@@ -5,8 +5,10 @@
  */
 
 import React, { useState } from 'react';
-import { Container, Title, Text, Stack, Paper, Drawer } from '@mantine/core';
+import { Container, Title, Text, Stack, Paper, Drawer, Tabs } from '@mantine/core';
+import { IconChartDots, IconShieldCheck } from '@tabler/icons-react';
 import { ThreatMatrix } from '../components/ThreatMatrix';
+import { ComplianceMapper } from '../components/ComplianceMapper';
 import { ThreatCard } from '../components/common/ThreatCard';
 import { useThreatModel } from '../hooks/useThreatModel';
 import type { MatchedThreat } from '../types';
@@ -32,7 +34,30 @@ export const BusinessView: React.FC = () => {
         </div>
         
         {threats.length > 0 ? (
-          <ThreatMatrix threats={threats} onThreatClick={handleThreatClick} />
+          <Tabs defaultValue="risk-matrix" variant="outline">
+            <Tabs.List>
+              <Tabs.Tab
+                value="risk-matrix"
+                leftSection={<IconChartDots size={16} />}
+              >
+                Risk Matrix
+              </Tabs.Tab>
+              <Tabs.Tab
+                value="compliance"
+                leftSection={<IconShieldCheck size={16} />}
+              >
+                Compliance Mapping
+              </Tabs.Tab>
+            </Tabs.List>
+            
+            <Tabs.Panel value="risk-matrix" pt="md">
+              <ThreatMatrix threats={threats} onThreatClick={handleThreatClick} />
+            </Tabs.Panel>
+            
+            <Tabs.Panel value="compliance" pt="md">
+              <ComplianceMapper threats={threats} />
+            </Tabs.Panel>
+          </Tabs>
         ) : (
           <Paper p="xl" withBorder>
             <Stack gap="md" align="center">
@@ -56,7 +81,7 @@ export const BusinessView: React.FC = () => {
         <Stack gap="md">
           {selectedThreats.map((threat) => (
             <ThreatCard
-              key={threat.matched_threat.id}
+              key={threat.threat_id}
               threat={threat}
               onClick={() => {
                 // Could navigate to detailed view
