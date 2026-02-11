@@ -1,0 +1,204 @@
+/**
+ * DFDVisualizer Styles
+ * 
+ * Responsive styling for DFD visualization component
+ */
+
+.container {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+.toolbar {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border-radius: var(--mantine-radius-md);
+}
+
+.diagramContainer {
+  position: relative;
+  min-height: 500px;
+  max-height: 800px;
+  overflow: auto;
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-8));
+  border-radius: var(--mantine-radius-md);
+}
+
+.diagram {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.2s ease-in-out;
+  user-select: none;
+}
+
+.diagram:focus {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 4px;
+}
+
+/* Node hover effects */
+.diagram :global(.node) {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.diagram :global(.node:hover) {
+  filter: brightness(1.1);
+}
+
+.diagram :global(.node:focus) {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 2px;
+}
+
+/* Edge styling */
+.diagram :global(.edgePath path) {
+  stroke: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+  stroke-width: 2px;
+}
+
+.diagram :global(.edgeLabel) {
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Trust boundary styling */
+.diagram :global(.cluster rect) {
+  fill: light-dark(rgba(34, 139, 230, 0.05), rgba(34, 139, 230, 0.1));
+  stroke: var(--mantine-color-blue-5);
+  stroke-width: 2px;
+  stroke-dasharray: 5, 5;
+  rx: 8px;
+}
+
+.diagram :global(.cluster text) {
+  fill: var(--mantine-color-blue-7);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Loading overlay */
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: light-dark(rgba(255, 255, 255, 0.9), rgba(26, 27, 30, 0.9));
+  z-index: 10;
+  border-radius: var(--mantine-radius-md);
+}
+
+/* Empty state */
+.emptyState {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border-radius: var(--mantine-radius-md);
+}
+
+/* Legend */
+.legend {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border-radius: var(--mantine-radius-md);
+}
+
+.legendBox {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .toolbar > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .diagramContainer {
+    max-height: 600px;
+  }
+  
+  .legend {
+    overflow-x: auto;
+  }
+  
+  .legend > div {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Dark mode specific adjustments */
+@media (prefers-color-scheme: dark) {
+  .diagram :global(.node rect),
+  .diagram :global(.node circle),
+  .diagram :global(.node polygon) {
+    filter: brightness(0.9);
+  }
+  
+  .diagram :global(.edgePath path) {
+    filter: brightness(1.2);
+  }
+}
+
+/* Print styles */
+@media print {
+  .toolbar,
+  .legend {
+    display: none;
+  }
+  
+  .diagramContainer {
+    border: none;
+    box-shadow: none;
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .diagram {
+    transform: none !important;
+  }
+}
+
+/* Accessibility - High contrast mode */
+@media (prefers-contrast: high) {
+  .diagram :global(.node rect),
+  .diagram :global(.node circle),
+  .diagram :global(.node polygon) {
+    stroke-width: 3px !important;
+  }
+  
+  .diagram :global(.edgePath path) {
+    stroke-width: 3px;
+  }
+  
+  .diagram :global(.cluster rect) {
+    stroke-width: 3px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .diagram {
+    transition: none;
+  }
+  
+  .diagram :global(.node) {
+    transition: none;
+  }
+}
