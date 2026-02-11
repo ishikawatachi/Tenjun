@@ -554,6 +554,418 @@ def get_threats_for_resource_type(resource_type):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/dfd/generate/service', methods=['POST'])
+def generate_service_level_dfd():
+    """
+    Generate service-level Data Flow Diagram
+    
+    Expected JSON body:
+    {
+        "resources": [
+            {
+                "id": "resource-1",
+                "resource_type": "google_sql_database_instance",
+                "name": "main-db",
+                "properties": {...}
+            }
+        ]
+    }
+    """
+    try:
+        from dfd.dfd_generator import DFDGenerator
+        
+        data = request.get_json()
+        
+        if not data or 'resources' not in data:
+            return jsonify({'error': 'Missing resources parameter'}), 400
+        
+        resources = data['resources']
+        
+        generator = DFDGenerator()
+        dfd = generator.generate_service_level_dfd(resources)
+        
+        response = dfd.to_dict()
+        response['timestamp'] = datetime.utcnow().isoformat()
+        
+        logger.info(f"Generated service-level DFD: {len(dfd.nodes)} nodes, {len(dfd.edges)} edges")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating service-level DFD: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/dfd/generate/component', methods=['POST'])
+def generate_component_level_dfd():
+    """
+    Generate component-level Data Flow Diagram
+    
+    Expected JSON body:
+    {
+        "resources": [...]
+    }
+    """
+    try:
+        from dfd.dfd_generator import DFDGenerator
+        
+        data = request.get_json()
+        
+        if not data or 'resources' not in data:
+            return jsonify({'error': 'Missing resources parameter'}), 400
+        
+        resources = data['resources']
+        
+        generator = DFDGenerator()
+        dfd = generator.generate_component_level_dfd(resources)
+        
+        response = dfd.to_dict()
+        response['timestamp'] = datetime.utcnow().isoformat()
+        
+        logger.info(f"Generated component-level DFD: {len(dfd.nodes)} nodes, {len(dfd.edges)} edges")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating component-level DFD: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/dfd/generate/code', methods=['POST'])
+def generate_code_level_dfd():
+    """
+    Generate code-level Data Flow Diagram
+    
+    Expected JSON body:
+    {
+        "code_flows": [
+            {
+                "function": "processPayment",
+                "calls": ["validateCard", "chargeCard"],
+                "external_apis": ["stripe.com/charge"],
+                "data_access": ["payments_db"]
+            }
+        ]
+    }
+    """
+    try:
+        from dfd.dfd_generator import DFDGenerator
+        
+        data = request.get_json()
+        
+        if not data or 'code_flows' not in data:
+            return jsonify({'error': 'Missing code_flows parameter'}), 400
+        
+        code_flows = data['code_flows']
+        
+        generator = DFDGenerator()
+        dfd = generator.generate_code_level_dfd(code_flows)
+        
+        response = dfd.to_dict()
+        response['timestamp'] = datetime.utcnow().isoformat()
+        
+        logger.info(f"Generated code-level DFD: {len(dfd.nodes)} nodes, {len(dfd.edges)} edges")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating code-level DFD: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/dfd/generate/all', methods=['POST'])
+def generate_all_levels_dfd():
+    """
+    Generate all three levels of DFDs
+    
+    Expected JSON body:
+    {
+        "resources": [...],
+        "code_flows": [...] (optional)
+    }
+    """
+    try:
+        from dfd.dfd_generator import DFDGenerator
+        
+        data = request.get_json()
+        
+        if not data or 'resources' not in data:
+            return jsonify({'error': 'Missing resources parameter'}), 400
+        
+        resources = data['resources']
+        code_flows = data.get('code_flows')
+        
+        generator = DFDGenerator()
+        result = generator.generate_all_levels(resources, code_flows)
+        
+        response = result.to_dict()
+        response['timestamp'] = datetime.utcnow().isoformat()
+        
+        logger.info(f"Generated all DFD levels: {result.metadata['levels_generated']}")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating all DFD levels: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/dfd/export/mermaid', methods=['POST'])
+def export_dfd_to_mermaid():
+    """
+    Export DFD to Mermaid diagram syntax
+    
+    Expected JSON body:
+    {
+        "dfd": {...},
+        "include_trust_boundaries": true
+    }
+    """
+    try:
+        from dfd.mermaid_exporter import MermaidExporter
+        from models.dfd import DFD, DFDNode, DFDEdge, NodeType, TrustBoundary, DataClassification, TrustBoundaryGroup
+        
+        data = request.get_json()
+        
+        if not data or 'dfd' not in data:
+            return jsonify({'error': 'Missing dfd parameter'}), 400
+        
+        dfd_data = data['dfd']
+        include_trust_boundaries = data.get('include_trust_boundaries', True)
+        
+        # Reconstruct DFD from JSON
+        def to_enum(enum_class, value):
+            if value is None:
+                return None
+            try:
+                return enum_class[value.upper()]
+            except:
+                return None
+        
+        nodes = [
+            DFDNode(
+                id=n['id'],
+                label=n['label'],
+                type=to_enum(NodeType, n['type']),
+                cloud_provider=n.get('cloud_provider'),
+                trust_boundary=to_enum(TrustBoundary, n.get('trust_boundary')),
+                resource_type=n.get('resource_type'),
+                properties=n.get('properties', {}),
+                tags=n.get('tags', [])
+            )
+            for n in dfd_data['nodes']
+        ]
+        
+        edges = [
+            DFDEdge(
+                source=e['source'],
+                target=e['target'],
+                label=e['label'],
+                data_classification=to_enum(DataClassification, e.get('data_classification')),
+                protocol=e.get('protocol'),
+                port=e.get('port'),
+                encrypted=e.get('encrypted', False),
+                bidirectional=e.get('bidirectional', False),
+                properties=e.get('properties', {})
+            )
+            for e in dfd_data['edges']
+        ]
+        
+        trust_boundaries = [
+            TrustBoundaryGroup(
+                boundary=to_enum(TrustBoundary, tb['boundary']),
+                name=tb['name'],
+                node_ids=tb['node_ids'],
+                description=tb.get('description')
+            )
+            for tb in dfd_data.get('trust_boundaries', [])
+        ]
+        
+        dfd = DFD(
+            level=dfd_data['level'],
+            nodes=nodes,
+            edges=edges,
+            trust_boundaries=trust_boundaries,
+            metadata=dfd_data.get('metadata', {})
+        )
+        
+        exporter = MermaidExporter()
+        mermaid_syntax = exporter.export_to_mermaid(dfd, include_trust_boundaries)
+        
+        response = {
+            'mermaid': mermaid_syntax,
+            'level': dfd.level,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Exported {dfd.level}-level DFD to Mermaid")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error exporting DFD to Mermaid: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/dfd/export/svg', methods=['POST'])
+def export_dfd_to_svg():
+    """
+    Export DFD to SVG HTML template
+    
+    Expected JSON body:
+    {
+        "dfd": {...}
+    }
+    """
+    try:
+        from dfd.mermaid_exporter import MermaidExporter
+        from models.dfd import DFD, DFDNode, DFDEdge, NodeType, TrustBoundary, DataClassification, TrustBoundaryGroup
+        
+        data = request.get_json()
+        
+        if not data or 'dfd' not in data:
+            return jsonify({'error': 'Missing dfd parameter'}), 400
+        
+        dfd_data = data['dfd']
+        
+        # Reconstruct DFD from JSON (same as above)
+        def to_enum(enum_class, value):
+            if value is None:
+                return None
+            try:
+                return enum_class[value.upper()]
+            except:
+                return None
+        
+        nodes = [
+            DFDNode(
+                id=n['id'], label=n['label'], type=to_enum(NodeType, n['type']),
+                cloud_provider=n.get('cloud_provider'),
+                trust_boundary=to_enum(TrustBoundary, n.get('trust_boundary')),
+                resource_type=n.get('resource_type'),
+                properties=n.get('properties', {}), tags=n.get('tags', [])
+            )
+            for n in dfd_data['nodes']
+        ]
+        
+        edges = [
+            DFDEdge(
+                source=e['source'], target=e['target'], label=e['label'],
+                data_classification=to_enum(DataClassification, e.get('data_classification')),
+                protocol=e.get('protocol'), port=e.get('port'),
+                encrypted=e.get('encrypted', False), bidirectional=e.get('bidirectional', False),
+                properties=e.get('properties', {})
+            )
+            for e in dfd_data['edges']
+        ]
+        
+        trust_boundaries = [
+            TrustBoundaryGroup(
+                boundary=to_enum(TrustBoundary, tb['boundary']), name=tb['name'],
+                node_ids=tb['node_ids'], description=tb.get('description')
+            )
+            for tb in dfd_data.get('trust_boundaries', [])
+        ]
+        
+        dfd = DFD(level=dfd_data['level'], nodes=nodes, edges=edges,
+                 trust_boundaries=trust_boundaries, metadata=dfd_data.get('metadata', {}))
+        
+        exporter = MermaidExporter()
+        svg_html = exporter.export_to_svg(dfd)
+        
+        logger.info(f"Exported {dfd.level}-level DFD to SVG")
+        return svg_html, 200, {'Content-Type': 'text/html'}
+        
+    except Exception as e:
+        logger.error(f"Error exporting DFD to SVG: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/dfd/summary', methods=['POST'])
+def get_dfd_summary():
+    """
+    Get DFD summary statistics
+    
+    Expected JSON body:
+    {
+        "dfd": {...}
+    }
+    """
+    try:
+        from dfd.mermaid_exporter import MermaidExporter
+        from models.dfd import DFD, DFDNode, DFDEdge, NodeType, TrustBoundary, DataClassification, TrustBoundaryGroup
+        
+        data = request.get_json()
+        
+        if not data or 'dfd' not in data:
+            return jsonify({'error': 'Missing dfd parameter'}), 400
+        
+        dfd_data = data['dfd']
+        
+        # Reconstruct DFD from JSON
+        def to_enum(enum_class, value):
+            if value is None:
+                return None
+            try:
+                return enum_class[value.upper()]
+            except:
+                return None
+        
+        nodes = [
+            DFDNode(
+                id=n['id'], label=n['label'], type=to_enum(NodeType, n['type']),
+                cloud_provider=n.get('cloud_provider'),
+                trust_boundary=to_enum(TrustBoundary, n.get('trust_boundary')),
+                resource_type=n.get('resource_type'),
+                properties=n.get('properties', {}), tags=n.get('tags', [])
+            )
+            for n in dfd_data['nodes']
+        ]
+        
+        edges = [
+            DFDEdge(
+                source=e['source'], target=e['target'], label=e['label'],
+                data_classification=to_enum(DataClassification, e.get('data_classification')),
+                protocol=e.get('protocol'), port=e.get('port'),
+                encrypted=e.get('encrypted', False), bidirectional=e.get('bidirectional', False),
+                properties=e.get('properties', {})
+            )
+            for e in dfd_data['edges']
+        ]
+        
+        trust_boundaries = [
+            TrustBoundaryGroup(
+                boundary=to_enum(TrustBoundary, tb['boundary']), name=tb['name'],
+                node_ids=tb['node_ids'], description=tb.get('description')
+            )
+            for tb in dfd_data.get('trust_boundaries', [])
+        ]
+        
+        dfd = DFD(level=dfd_data['level'], nodes=nodes, edges=edges,
+                 trust_boundaries=trust_boundaries, metadata=dfd_data.get('metadata', {}))
+        
+        exporter = MermaidExporter()
+        summary = exporter.export_summary(dfd)
+        
+        summary['timestamp'] = datetime.utcnow().isoformat()
+        
+        logger.info(f"Generated summary for {dfd.level}-level DFD")
+        return jsonify(summary), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating DFD summary: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """404 error handler"""
