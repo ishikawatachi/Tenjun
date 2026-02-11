@@ -1,0 +1,254 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.github/**'
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          # Get latest tag or default to v0.0.0
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          
+          # Parse version numbers
+          VERSION=${LATEST_TAG#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+          
+          # Increment patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+          
+          # Use manual version if provided
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            NEW_VERSION="${{ github.event.inputs.version }}"
+          fi
+          
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Creating release: $NEW_VERSION (previous: $LATEST_TAG)"
+
+      - name: Create release archive
+        id: create_archive
+        run: |
+          VERSION="${{ steps.get_tag.outputs.new_version }}"
+          ARCHIVE_NAME="threat-model-platform-${VERSION}"
+          
+          # Create release directory
+          mkdir -p release/$ARCHIVE_NAME
+          
+          # Copy installer files
+          cp install.sh install.ps1 install.bat release/$ARCHIVE_NAME/
+          cp setup.sh release/$ARCHIVE_NAME/ 2>/dev/null || true
+          cp docker-compose.yml docker-compose.dev.yml release/$ARCHIVE_NAME/
+          cp .env.example release/$ARCHIVE_NAME/
+          
+          # Copy documentation
+          cp README.md QUICKSTART.md release/$ARCHIVE_NAME/ 2>/dev/null || true
+          cp IMPLEMENTATION_COMPLETE.md release/$ARCHIVE_NAME/ 2>/dev/null || true
+          cp GITHUB_PAGES_FIX.md release/$ARCHIVE_NAME/ 2>/dev/null || true
+          
+          # Copy validation scripts
+          cp validate-config.sh verify-installation.sh release/$ARCHIVE_NAME/ 2>/dev/null || true
+          
+          # Copy infrastructure
+          cp -r infra release/$ARCHIVE_NAME/
+          
+          # Create archives
+          cd release
+          
+          # Linux/macOS tar.gz
+          tar -czf ${ARCHIVE_NAME}.tar.gz $ARCHIVE_NAME
+          
+          # Windows ZIP
+          zip -r ${ARCHIVE_NAME}.zip $ARCHIVE_NAME
+          
+          # Calculate checksums
+          sha256sum ${ARCHIVE_NAME}.tar.gz > ${ARCHIVE_NAME}.tar.gz.sha256
+          sha256sum ${ARCHIVE_NAME}.zip > ${ARCHIVE_NAME}.zip.sha256
+          
+          cd ..
+          
+          echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Created release archives"
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.get_tag.outputs.new_version }}"
+          PREV_TAG="${{ steps.get_tag.outputs.latest_tag }}"
+          
+          cat > release_notes.md << 'EOF'
+          ## 🚀 Threat Modeling Platform $VERSION
+          
+          Automated security threat analysis and modeling platform with AI-powered insights.
+          
+          ### 📦 What's Included
+          
+          - **Installers:** Cross-platform installation scripts (Linux/macOS/Windows)
+          - **Docker Setup:** Complete Docker Compose configuration
+          - **Backend API:** Node.js + TypeScript REST API
+          - **Analysis Service:** Python Flask threat analysis engine
+          - **Frontend:** React 19 web application
+          - **Documentation:** Complete setup and API guides
+          
+          ### ✨ Key Features
+          
+          - 🤖 **AI-Powered Analysis** - GPT-4 and Claude integration
+          - 🎫 **Jira Integration** - Automatic ticket creation
+          - 📊 **STRIDE Analysis** - Comprehensive threat modeling
+          - 🔐 **Enterprise Security** - RSA JWT auth, AES-256 encryption
+          - 🐳 **Docker Deployment** - One-command installation
+          - 📋 **Compliance Mapping** - NIST, ISO 27001, PCI-DSS, HIPAA, GDPR
+          
+          ### 📥 Installation
+          
+          #### Quick Start (Linux/macOS)
+          
+          ```bash
+          # Download and extract
+          wget https://github.com/ishikawatachi/Tenjun/releases/download/$VERSION/threat-model-platform-$VERSION.tar.gz
+          tar -xzf threat-model-platform-$VERSION.tar.gz
+          cd threat-model-platform-$VERSION
+          
+          # Run installer
+          ./install.sh
+          
+          # Access at https://localhost
+          ```
+          
+          #### Quick Start (Windows)
+          
+          ```powershell
+          # Download and extract the ZIP file
+          # Then run:
+          .\install.ps1
+          ```
+          
+          ### 📋 Prerequisites
+          
+          - Docker 20.10+ and Docker Compose 2.0+
+          - 4GB RAM (8GB recommended)
+          - 2GB disk space
+          - OpenSSL (for key generation)
+          
+          ### 🔗 Links
+          
+          - **Live Demo:** https://ishikawatachi.github.io/Tenjun/
+          - **Documentation:** https://ishikawatachi.github.io/Tenjun/walkthrough.html
+          - **API Reference:** https://ishikawatachi.github.io/Tenjun/api-reference.html
+          - **Architecture:** https://ishikawatachi.github.io/Tenjun/architecture.html
+          
+          ### 📝 Changelog
+          
+          EOF
+          
+          # Add commit messages since last tag
+          if [ "$PREV_TAG" != "v0.0.0" ]; then
+            echo "#### Commits since $PREV_TAG:" >> release_notes.md
+            echo "" >> release_notes.md
+            git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges >> release_notes.md
+          else
+            echo "#### Initial Release" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "- First public release of Threat Modeling Platform" >> release_notes.md
+          fi
+          
+          cat >> release_notes.md << 'EOF'
+          
+          ### 🔒 Security
+          
+          - All communications encrypted with TLS 1.3
+          - RSA-2048 JWT authentication
+          - AES-256 database encryption
+          - Comprehensive audit logging
+          
+          ### 📞 Support
+          
+          - **Issues:** https://github.com/ishikawatachi/Tenjun/issues
+          - **Discussions:** https://github.com/ishikawatachi/Tenjun/discussions
+          
+          ### ✅ Verification
+          
+          Verify checksums after download:
+          
+          ```bash
+          # Linux/macOS
+          sha256sum -c threat-model-platform-$VERSION.tar.gz.sha256
+          
+          # Windows PowerShell
+          Get-FileHash threat-model-platform-$VERSION.zip -Algorithm SHA256
+          ```
+          
+          ---
+          
+          **Full Changelog:** https://github.com/ishikawatachi/Tenjun/compare/$PREV_TAG...$VERSION
+          EOF
+          
+          # Replace variables
+          sed -i "s/\$VERSION/$VERSION/g" release_notes.md
+          sed -i "s/\$PREV_TAG/$PREV_TAG/g" release_notes.md
+          
+          echo "📝 Generated release notes"
+
+      - name: Create Git tag
+        run: |
+          VERSION="${{ steps.get_tag.outputs.new_version }}"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+          echo "🏷️ Created and pushed tag: $VERSION"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_tag.outputs.new_version }}
+          name: Release ${{ steps.get_tag.outputs.new_version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease || false }}
+          files: |
+            release/${{ steps.create_archive.outputs.archive_name }}.tar.gz
+            release/${{ steps.create_archive.outputs.archive_name }}.tar.gz.sha256
+            release/${{ steps.create_archive.outputs.archive_name }}.zip
+            release/${{ steps.create_archive.outputs.archive_name }}.zip.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        run: |
+          VERSION="${{ steps.get_tag.outputs.new_version }}"
+          echo "🎉 Release $VERSION created successfully!"
+          echo "📦 Download: https://github.com/ishikawatachi/Tenjun/releases/tag/$VERSION"

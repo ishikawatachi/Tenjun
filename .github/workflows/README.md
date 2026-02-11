@@ -4,6 +4,42 @@ This directory contains automated workflows for the Threat Modeling Platform.
 
 ## Workflows
 
+### release.yml
+
+Automatic release creation and package distribution.
+
+**Triggers:**
+- Push to `main` branch (excluding docs/** and *.md files)
+- Manual dispatch via GitHub Actions UI (allows custom version)
+
+**What it does:**
+1. Auto-increments semantic version (v1.0.0 → v1.0.1)
+2. Creates release archives (.tar.gz for Linux/macOS, .zip for Windows)
+3. Packages installer scripts, Docker configs, and documentation
+4. Generates comprehensive release notes with changelog
+5. Creates SHA256 checksums for verification
+6. Creates Git tag and pushes to repository
+7. Publishes GitHub Release with downloadable assets
+
+**Packaged Files:**
+- Installation: `install.sh`, `install.ps1`, `install.bat`, `setup.sh`
+- Docker: `docker-compose.yml`, `docker-compose.dev.yml`
+- Configuration: `.env.example`
+- Documentation: `README.md`, `QUICKSTART.md`, `IMPLEMENTATION_COMPLETE.md`
+- Validation: `validate-config.sh`, `verify-installation.sh`
+- Infrastructure: `infra/` directory
+
+**Manual Release:**
+1. Go to Actions → Release workflow
+2. Click "Run workflow"
+3. Enter version (e.g., `v2.0.0`)
+4. Choose if pre-release
+5. Click "Run workflow"
+
+**Download URL:**
+- Latest: `https://github.com/ishikawatachi/Tenjun/releases/latest`
+- Specific: `https://github.com/ishikawatachi/Tenjun/releases/tag/v1.0.0`
+
 ### threat-analysis.yml
 
 Automatic threat analysis on infrastructure changes.
