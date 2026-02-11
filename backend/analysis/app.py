@@ -966,6 +966,288 @@ def get_dfd_summary():
         return jsonify({'error': str(e)}), 500
 
 
+# ========================================
+# LLM Integration Endpoints
+# ========================================
+
+# Import LLM modules
+from llm.threat_generator import ThreatGenerator
+
+# Initialize threat generator
+threat_generator = None
+
+def get_threat_generator():
+    """Get or create threat generator instance"""
+    global threat_generator
+    if threat_generator is None:
+        claude_api_key = os.getenv('ANTHROPIC_API_KEY')
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        
+        if not claude_api_key and not openai_api_key:
+            logger.warning("No LLM API keys configured")
+        
+        threat_generator = ThreatGenerator(
+            claude_api_key=claude_api_key,
+            openai_api_key=openai_api_key,
+            enable_cache=os.getenv('LLM_ENABLE_CACHE', 'true').lower() == 'true'
+        )
+    return threat_generator
+
+
+@app.route('/llm/threat/describe', methods=['POST'])
+def llm_threat_describe():
+    """
+    Generate threat description using LLM
+    
+    Expected JSON body:
+    {
+        "config": {
+            "resource_type": "aws_s3_bucket",
+            "name": "data-bucket",
+            "properties": {"acl": "public-read"}
+        },
+        "threat_rule": {
+            "id": "AWS-S3-001",
+            "name": "Public S3 Bucket",
+            "category": "Data Exposure"
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'config' not in data or 'threat_rule' not in data:
+            return jsonify({
+                'error': 'Missing required fields: config and threat_rule'
+            }), 400
+        
+        generator = get_threat_generator()
+        
+        description = generator.generate_threat_description(
+            config=data['config'],
+            threat_rule=data['threat_rule'],
+            use_cache=data.get('use_cache', True)
+        )
+        
+        result = {
+            'description': description,
+            'timestamp': datetime.utcnow().isoformat(),
+            'cached': False  # TODO: Track if from cache
+        }
+        
+        logger.info(f"Generated threat description for {data['threat_rule'].get('id', 'unknown')}")
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating threat description: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/llm/threat/remediate', methods=['POST'])
+def llm_threat_remediate():
+    """
+    Generate remediation steps using LLM
+    
+    Expected JSON body:
+    {
+        "threat": {
+            "name": "Public S3 Bucket",
+            "description": "Bucket allows public access",
+            "severity": "high"
+        },
+        "context": {
+            "cloud_provider": "aws",
+            "service_type": "aws_s3_bucket",
+            "resource_name": "data-bucket",
+            "current_config": {"acl": "public-read"}
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'threat' not in data or 'context' not in data:
+            return jsonify({
+                'error': 'Missing required fields: threat and context'
+            }), 400
+        
+        generator = get_threat_generator()
+        
+        remediation = generator.generate_remediation(
+            threat=data['threat'],
+            context=data['context'],
+            use_cache=data.get('use_cache', True)
+        )
+        
+        result = {
+            'remediation': remediation,
+            'timestamp': datetime.utcnow().isoformat(),
+            'cloud_provider': data['context'].get('cloud_provider', 'unknown')
+        }
+        
+        logger.info(f"Generated remediation for {data['threat'].get('name', 'unknown')}")
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating remediation: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/llm/threat/compliance', methods=['POST'])
+def llm_threat_compliance():
+    """
+    Generate compliance explanation using LLM
+    
+    Expected JSON body:
+    {
+        "threat": {
+            "name": "Unencrypted Database",
+            "description": "Database lacks encryption at rest"
+        },
+        "framework": "ISO27001",
+        "control_id": "A.10.1.1"  // Optional
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'threat' not in data or 'framework' not in data:
+            return jsonify({
+                'error': 'Missing required fields: threat and framework'
+            }), 400
+        
+        generator = get_threat_generator()
+        
+        explanation = generator.generate_compliance_explanation(
+            threat=data['threat'],
+            framework=data['framework'],
+            control_id=data.get('control_id'),
+            use_cache=data.get('use_cache', True)
+        )
+        
+        result = {
+            'explanation': explanation,
+            'framework': data['framework'],
+            'control_id': data.get('control_id'),
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Generated compliance explanation for {data['framework']}")
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating compliance explanation: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/llm/threat/attack-scenario', methods=['POST'])
+def llm_attack_scenario():
+    """
+    Generate attack scenario using LLM
+    
+    Expected JSON body:
+    {
+        "threat": {
+            "name": "SQL Injection",
+            "description": "Allows malicious SQL queries"
+        },
+        "service_info": {
+            "service_type": "web_application",
+            "technology": "Node.js + PostgreSQL"
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'threat' not in data:
+            return jsonify({'error': 'Missing required field: threat'}), 400
+        
+        generator = get_threat_generator()
+        
+        scenario = generator.generate_attack_scenario(
+            threat=data['threat'],
+            service_info=data.get('service_info', {}),
+            use_cache=data.get('use_cache', True)
+        )
+        
+        result = {
+            'scenario': scenario,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Generated attack scenario for {data['threat'].get('name', 'unknown')}")
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating attack scenario: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/llm/threat/risk-assess', methods=['POST'])
+def llm_risk_assess():
+    """
+    Generate risk assessment using LLM
+    
+    Expected JSON body:
+    {
+        "threat": {
+            "name": "Data Breach",
+            "description": "Customer data exposure"
+        },
+        "business_context": {
+            "industry": "Financial Services",
+            "data_sensitivity": "high",
+            "regulatory_requirements": ["GDPR", "PCI-DSS"]
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'threat' not in data:
+            return jsonify({'error': 'Missing required field: threat'}), 400
+        
+        generator = get_threat_generator()
+        
+        assessment = generator.generate_risk_assessment(
+            threat=data['threat'],
+            business_context=data.get('business_context', {}),
+            use_cache=data.get('use_cache', True)
+        )
+        
+        result = {
+            'assessment': assessment,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        logger.info(f"Generated risk assessment for {data['threat'].get('name', 'unknown')}")
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating risk assessment: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/llm/statistics', methods=['GET'])
+def llm_statistics():
+    """Get LLM usage and cache statistics"""
+    try:
+        generator = get_threat_generator()
+        stats = generator.get_statistics()
+        
+        result = {
+            'statistics': stats,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Error retrieving statistics: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """404 error handler"""
