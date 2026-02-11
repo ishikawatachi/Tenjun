@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation Walkthrough | Threat Modeling Platform</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">🔒 Threat Modeling Platform</div>
+            <ul class="nav-menu">
+                <li><a href="./index.html">Home</a></li>
+                <li><a href="./demo.html">Live Demo</a></li>
+                <li><a href="./architecture.html">Architecture</a></li>
+                <li><a href="./walkthrough.html" class="active">Walkthrough</a></li>
+                <li><a href="./api-reference.html">API Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="demo-header">
+        <div class="container">
+            <h1>🚀 Installation Walkthrough</h1>
+            <p class="demo-subtitle">Step-by-step guide to get your platform running in minutes</p>
+        </div>
+    </section>
+
+    <div class="container" style="padding: 3rem 0;">
+        
+        <!-- Prerequisites -->
+        <section style="margin-bottom: 4rem;">
+            <h2>📋 Prerequisites</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Before starting, ensure your system meets these requirements:
+            </p>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Required Software</h3>
+                <ul style="color: var(--text-secondary); line-height: 2;">
+                    <li><strong>Docker</strong> v20.10+ (<a href="https://docs.docker.com/get-docker/" target="_blank">Install Docker</a>)</li>
+                    <li><strong>Docker Compose</strong> v2.0+ (<a href="https://docs.docker.com/compose/install/" target="_blank">Install Compose</a>)</li>
+                    <li><strong>OpenSSL</strong> (usually pre-installed on Linux/macOS)</li>
+                    <li><strong>Git</strong> (for cloning the repository)</li>
+                </ul>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">System Requirements</h3>
+                <ul style="color: var(--text-secondary); line-height: 2;">
+                    <li><strong>OS:</strong> Linux, macOS, Windows 10/11 (with WSL or PowerShell)</li>
+                    <li><strong>RAM:</strong> 4GB minimum, 8GB recommended</li>
+                    <li><strong>Disk Space:</strong> 2GB free space</li>
+                    <li><strong>CPU:</strong> 2 cores minimum</li>
+                </ul>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">Optional (For Full Features)</h3>
+                <ul style="color: var(--text-secondary); line-height: 2;">
+                    <li><strong>OpenAI API Key</strong> - For GPT-4 threat analysis (<a href="https://platform.openai.com/api-keys" target="_blank">Get Key</a>)</li>
+                    <li><strong>Anthropic API Key</strong> - For Claude analysis (<a href="https://console.anthropic.com/" target="_blank">Get Key</a>)</li>
+                    <li><strong>Jira Cloud Account</strong> - For issue tracking (<a href="https://id.atlassian.com/signup" target="_blank">Sign Up</a>)</li>
+                    <li><strong>GitHub Personal Token</strong> - For repository scanning (<a href="https://github.com/settings/tokens" target="_blank">Generate Token</a>)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Installation Steps -->
+        <section style="margin-bottom: 4rem;">
+            <h2>⚡ Quick Installation (Linux/macOS)</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: var(--primary-color); color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">1</div>
+                    <h3 style="margin: 0;">Clone the Repository</h3>
+                </div>
+                <pre><code>git clone https://github.com/yourusername/threat-model-platform.git
+cd threat-model-platform</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: var(--primary-color); color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">2</div>
+                    <h3 style="margin: 0;">Run the Installer</h3>
+                </div>
+                <pre><code>./install.sh</code></pre>
+                <p style="color: var(--text-secondary); margin-top: 1rem;">
+                    The installer will guide you through:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 2; margin-top: 1rem;">
+                    <li>✅ System validation (Docker, OpenSSL)</li>
+                    <li>✅ Feature selection (LLM, Jira, GitHub)</li>
+                    <li>✅ Secure key generation (DB encryption, JWT RSA keys)</li>
+                    <li>✅ Configuration file creation (.env)</li>
+                    <li>✅ Docker build and deployment</li>
+                    <li>✅ Health verification</li>
+                </ul>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: var(--primary-color); color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">3</div>
+                    <h3 style="margin: 0;">Access the Platform</h3>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Once installation completes, access the platform:
+                </p>
+                <div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: 0.5rem;">
+                    <p style="margin-bottom: 0.5rem;"><strong>Frontend:</strong> <a href="https://localhost" target="_blank">https://localhost</a></p>
+                    <p style="margin-bottom: 0.5rem;"><strong>API Documentation:</strong> <a href="https://localhost/api-docs" target="_blank">https://localhost/api-docs</a></p>
+                    <p style="margin-bottom: 0;"><strong>Health Check:</strong> <a href="https://localhost/api/health" target="_blank">https://localhost/api/health</a></p>
+                </div>
+                <div style="background: #fef3c7; border: 1px solid #fbbf24; color: #92400e; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; font-size: 0.875rem;">
+                    <strong>Note:</strong> Your browser will warn about the self-signed SSL certificate. 
+                    This is normal for development. Click "Advanced" and "Proceed to localhost".
+                </div>
+            </div>
+        </section>
+
+        <!-- Windows Installation -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🪟 Windows Installation</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Option 1: PowerShell</h3>
+                <pre><code># Run as Administrator
+git clone https://github.com/yourusername/threat-model-platform.git
+cd threat-model-platform
+.\install.ps1</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Option 2: Double-Click Installer</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Simply double-click <code>install.bat</code> in the repository folder.
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">Option 3: WSL (Recommended)</h3>
+                <pre><code># Install WSL if not already installed
+wsl --install
+
+# Open WSL and run Linux installer
+bash install.sh</code></pre>
+            </div>
+        </section>
+
+        <!-- Feature Configuration -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🎯 Feature Configuration</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                The platform includes optional features that can be enabled or disabled based on your needs.
+            </p>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">🤖 AI-Powered Analysis</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Enable LLM-based threat detection using OpenAI GPT-4 or Anthropic Claude.
+                </p>
+                <pre><code># In .env file
+ENABLE_LLM=true
+LLM_PROVIDER=openai  # or 'anthropic'
+OPENAI_API_KEY=sk-your-key-here</code></pre>
+                <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.875rem;">
+                    <strong>Cost:</strong> OpenAI GPT-4 typically costs $20-100/month depending on usage.
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">🎫 Jira Integration</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Sync threats to Jira for tracking and collaboration.
+                </p>
+                <pre><code># In .env file
+ENABLE_JIRA=true
+JIRA_HOST=your-company.atlassian.net
+JIRA_EMAIL=your-email@company.com
+JIRA_API_TOKEN=your-api-token
+JIRA_PROJECT_KEY=SEC</code></pre>
+                <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.875rem;">
+                    <strong>How to get API token:</strong> <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">Generate Jira API Token</a>
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">🐙 GitHub Integration</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Monitor repositories for security issues and analyze IaC.
+                </p>
+                <pre><code># In .env file
+ENABLE_GITHUB=true
+GITHUB_TOKEN=ghp_your-token-here</code></pre>
+                <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.875rem;">
+                    <strong>How to get token:</strong> <a href="https://github.com/settings/tokens" target="_blank">Generate GitHub Personal Access Token</a> (scopes: repo, read:org)
+                </p>
+            </div>
+        </section>
+
+        <!-- Manual Installation -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🔧 Manual Installation</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                For advanced users who want more control over the installation process.
+            </p>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Step-by-Step Manual Setup</h3>
+                <pre><code># 1. Create environment file
+cp .env.example .env
+
+# 2. Generate database encryption key
+openssl rand -hex 32
+
+# 3. Generate JWT RSA keypair
+mkdir -p .keys
+openssl genrsa -out .keys/private.pem 2048
+openssl rsa -in .keys/private.pem -pubout -out .keys/public.pem
+
+# 4. Base64 encode keys (Linux)
+base64 -w 0 < .keys/private.pem
+base64 -w 0 < .keys/public.pem
+
+# 5. Edit .env with generated keys
+
+# 6. Create data directories
+mkdir -p data/db data/backups logs
+
+# 7. Generate SSL certificates
+cd infra/docker
+./generate-ssl.sh
+cd ../..
+
+# 8. Build and start services
+docker-compose build
+docker-compose up -d
+
+# 9. Verify installation
+./verify-installation.sh</code></pre>
+            </div>
+        </section>
+
+        <!-- Verification -->
+        <section style="margin-bottom: 4rem;">
+            <h2>✅ Verification & Testing</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Validate Configuration</h3>
+                <pre><code>./validate-config.sh</code></pre>
+                <p style="color: var(--text-secondary); margin-top: 1rem;">
+                    This checks:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 2; margin-top: 1rem;">
+                    <li>Environment variables are set correctly</li>
+                    <li>Security keys are valid (RSA format, proper length)</li>
+                    <li>Required files and directories exist</li>
+                    <li>Docker services are running</li>
+                    <li>Health endpoints respond correctly</li>
+                </ul>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Run Test Suite</h3>
+                <pre><code>./verify-installation.sh</code></pre>
+                <p style="color: var(--text-secondary); margin-top: 1rem;">
+                    Runs 60+ automated tests covering:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 2; margin-top: 1rem;">
+                    <li>Prerequisites validation</li>
+                    <li>Configuration integrity</li>
+                    <li>Code integration (routes, dependencies)</li>
+                    <li>Docker services status</li>
+                    <li>API functionality</li>
+                    <li>Database operations</li>
+                    <li>Security audit</li>
+                </ul>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">Manual Health Checks</h3>
+                <pre><code># Check API health
+curl -k https://localhost/api/health
+
+# Check Analysis service
+curl -k https://localhost/analysis/health
+
+# View running services
+docker-compose ps
+
+# Check logs
+docker-compose logs -f api
+docker-compose logs -f analysis</code></pre>
+            </div>
+        </section>
+
+        <!-- Common Commands -->
+        <section style="margin-bottom: 4rem;">
+            <h2>📝 Common Commands</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <div>
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Service Management</h4>
+                        <pre style="font-size: 0.85rem;"><code># Start services
+docker-compose up -d
+
+# Stop services
+docker-compose down
+
+# Restart services
+docker-compose restart
+
+# Restart specific service
+docker-compose restart api</code></pre>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Monitoring</h4>
+                        <pre style="font-size: 0.85rem;"><code># View all logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f api
+
+# Check service status
+docker-compose ps
+
+# View resource usage
+docker stats</code></pre>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Maintenance</h4>
+                        <pre style="font-size: 0.85rem;"><code># Rebuild after changes
+docker-compose build
+
+# Remove all containers
+docker-compose down -v
+
+# Clean up Docker
+docker system prune -a
+
+# Backup database
+cp data/threat-models.db \
+   backups/db-$(date +%Y%m%d).db</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Troubleshooting -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🔍 Troubleshooting</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 1rem;">
+                <h4 style="color: var(--danger-color); margin-bottom: 0.5rem;">Docker daemon not running</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <strong>Solution:</strong> Start Docker Desktop application or run <code>sudo systemctl start docker</code> on Linux.
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 1rem;">
+                <h4 style="color: var(--danger-color); margin-bottom: 0.5rem;">Port already in use</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <strong>Solution:</strong> Stop services using ports 80, 443, 3001, or 5000. Or edit <code>docker-compose.yml</code> to use different ports.
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 1rem;">
+                <h4 style="color: var(--danger-color); margin-bottom: 0.5rem;">Services fail health checks</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <strong>Solution:</strong> Check logs with <code>docker-compose logs -f</code>. Services may need more time to start. Wait 30 seconds and retry.
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 1rem;">
+                <h4 style="color: var(--danger-color); margin-bottom: 0.5rem;">Database schema not applied</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <strong>Solution:</strong> Manually apply schema: <code>sqlite3 data/threat-models.db < backend/api/src/database/schema.sql</code>
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h4 style="color: var(--danger-color); margin-bottom: 0.5rem;">Jira/LLM features not working</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <strong>Solution:</strong> Verify API keys in .env file. Check that <code>ENABLE_JIRA=true</code> and <code>ENABLE_LLM=true</code>. Restart services after changes.
+                </p>
+            </div>
+        </section>
+
+        <!-- Next Steps -->
+        <section style="text-align: center; margin-top: 4rem;">
+            <h3>🎉 Installation Complete!</h3>
+            <p style="color: var(--text-secondary); margin: 2rem 0;">
+                Your threat modeling platform is ready to use. Here's what to do next:
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="./demo.html" class="btn btn-primary">
+                    <span>Try Demo</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a href="./architecture.html" class="btn btn-secondary">
+                    View Architecture
+                </a>
+                <a href="./api-reference.html" class="btn btn-secondary">
+                    API Documentation
+                </a>
+            </div>
+        </section>
+
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Threat Modeling Platform. <a href="./index.html">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

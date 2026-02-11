@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Demo | Threat Modeling Platform</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">🔒 Threat Modeling Platform</div>
+            <ul class="nav-menu">
+                <li><a href="./index.html">Home</a></li>
+                <li><a href="./demo.html" class="active">Live Demo</a></li>
+                <li><a href="./architecture.html">Architecture</a></li>
+                <li><a href="./walkthrough.html">Walkthrough</a></li>
+                <li><a href="./api-reference.html">API Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="demo-header">
+        <div class="container">
+            <h1>🎮 Interactive Threat Modeling Demo</h1>
+            <p class="demo-subtitle">Client-side threat analysis - no backend required</p>
+            <div class="demo-notice">
+                <strong>Note:</strong> This is a client-side simulation. The full platform includes AI-powered analysis,
+                Jira integration, and database storage. <a href="walkthrough.html">Install the full version →</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="demo-workspace">
+        <div class="container-fluid">
+            <div class="demo-layout">
+                <!-- Left Panel: Input Form -->
+                <div class="demo-panel demo-input-panel">
+                    <h2>📝 System Configuration</h2>
+                    
+                    <form id="threatForm">
+                        <div class="form-group">
+                            <label for="systemName">System Name *</label>
+                            <input type="text" id="systemName" class="form-input" 
+                                   placeholder="e.g., E-Commerce Platform" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="systemDesc">System Description *</label>
+                            <textarea id="systemDesc" class="form-input" rows="3" 
+                                      placeholder="Describe your system architecture..."required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cloudProvider">Cloud Provider</label>
+                            <select id="cloudProvider" class="form-input">
+                                <option value="aws">AWS</option>
+                                <option value="azure">Azure</option>
+                                <option value="gcp">Google Cloud</option>
+                                <option value="kubernetes">Kubernetes</option>
+                                <option value="on-premise">On-Premise</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>System Components</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="web-server"> Web Server
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="api-gateway"> API Gateway
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="database"> Database
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="cache"> Cache (Redis/Memcached)
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="storage"> Object Storage (S3/Blob)
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="auth"> Authentication Service
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="messaging"> Message Queue
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="components" value="cdn"> CDN
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Analysis Scope</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="stride" value="spoofing" checked> Spoofing
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="stride" value="tampering" checked> Tampering
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="stride" value="repudiation" checked> Repudiation
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="stride" value="information" checked> Information Disclosure
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="stride" value="dos" checked> Denial of Service
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="stride" value="elevation" checked> Elevation of Privilege
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="analyzeBtn">
+                            🔍 Analyze Threats
+                        </button>
+
+                        <button type="button" class="btn btn-secondary btn-block" id="loadExampleBtn">
+                            📋 Load Example System
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Panel: Results -->
+                <div class="demo-panel demo-results-panel">
+                    <div id="resultsContainer">
+                        <div class="empty-state">
+                            <div class="empty-icon">🔍</div>
+                            <h3>Ready to Analyze</h3>
+                            <p>Fill in the system details and click "Analyze Threats" to see potential security threats.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Threat Modeling Platform. <a href="index.html">Back to Home</a></p>
+        </div>
+    </footer>
+
+    <script src="demo.js"></script>
+</body>
+</html>

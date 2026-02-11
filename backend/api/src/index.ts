@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.routes';
 import threatModelsRoutes from './routes/threatModels.routes';
 import analysisRoutes from './routes/analysis.routes';
 import webhookRoutes from './routes/webhook.routes';
+import jiraRoutes from '../../routes/jira.routes';
 
 /**
  * Initialize Express application
@@ -137,6 +138,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/threat-models', threatModelsRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/jira', jiraRoutes);
 
 /**
  * Root endpoint

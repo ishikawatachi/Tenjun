@@ -16,8 +16,8 @@ RUN npm ci --only=production && \
 # Copy application files
 COPY . .
 
-# Build TypeScript (if using TS)
-# RUN npm run build
+# Build TypeScript
+RUN cd api && npm run build
 
 # Production stage
 FROM node:18-alpine
@@ -53,4 +53,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 ENTRYPOINT ["/sbin/tini", "--"]
 
 # Start application
-CMD ["node", "api/server.js"]
+CMD ["node", "api/dist/index.js"]

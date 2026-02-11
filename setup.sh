@@ -37,26 +37,90 @@ if [ ! -f .env ]; then
     # Generate secure keys
     echo "🔐 Generating secure keys..."
     DB_KEY=$(openssl rand -hex 32)
-    JWT_KEY=$(openssl rand -hex 32)
+    
+    # Generate RSA keypair for JWT
+    echo "🔑 Generating RSA keypair for JWT..."
+    mkdir -p .keys
+    openssl genrsa -out .keys/private.pem 2048 2>/dev/null
+    openssl rsa -in .keys/private.pem -pubout -out .keys/public.pem 2>/dev/null
+    
+    # Base64 encode the keys for environment variables
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        JWT_PRIVATE_B64=$(base64 < .keys/private.pem | tr -d '\n')
+        JWT_PUBLIC_B64=$(base64 < .keys/public.pem | tr -d '\n')
+    else
+        # Linux
+        JWT_PRIVATE_B64=$(base64 -w 0 < .keys/private.pem)
+        JWT_PUBLIC_B64=$(base64 -w 0 < .keys/public.pem)
+    fi
     
     # Update .env with generated keys
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
-        sed -i '' "s/your-secure-encryption-key-here-change-in-production/$DB_KEY/" .env
-        sed -i '' "s/your-jwt-secret-key-change-in-production/$JWT_KEY/" .env
+        sed -i '' "s|DB_ENCRYPTION_KEY=change-this-in-production-use-openssl-rand-hex-32|DB_ENCRYPTION_KEY=$DB_KEY|" .env
+        sed -i '' "s|JWT_PRIVATE_KEY=|JWT_PRIVATE_KEY=$JWT_PRIVATE_B64|" .env
+        sed -i '' "s|JWT_PUBLIC_KEY=|JWT_PUBLIC_KEY=$JWT_PUBLIC_B64|" .env
     else
         # Linux
-        sed -i "s/your-secure-encryption-key-here-change-in-production/$DB_KEY/" .env
-        sed -i "s/your-jwt-secret-key-change-in-production/$JWT_KEY/" .env
+        sed -i "s|DB_ENCRYPTION_KEY=change-this-in-production-use-openssl-rand-hex-32|DB_ENCRYPTION_KEY=$DB_KEY|" .env
+        sed -i "s|JWT_PRIVATE_KEY=|JWT_PRIVATE_KEY=$JWT_PRIVATE_B64|" .env
+        sed -i "s|JWT_PUBLIC_KEY=|JWT_PUBLIC_KEY=$JWT_PUBLIC_B64|" .env
     fi
     
     echo "✅ .env file created with secure keys"
+    echo "✅ RSA keypair generated and saved to .keys/"
     echo ""
-    echo "⚠️  IMPORTANT: Please edit .env and add your API keys:"
-    echo "   - OPENAI_API_KEY"
-    echo "   - ANTHROPIC_API_KEY"
+    echo "⚠️  OPTIONAL FEATURES:"
     echo ""
-    read -p "Press Enter after you've added your API keys to .env..."
+    
+    # Ask about LLM features
+    echo "🤖 Enable LLM-powered threat analysis? (requires API keys)"
+    read -p "   Enable LLM features? [y/N]: " enable_llm
+    if [[ "$enable_llm" =~ ^[Yy]$ ]]; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/ENABLE_LLM=true/ENABLE_LLM=true/" .env
+        else
+            sed -i "s/ENABLE_LLM=true/ENABLE_LLM=true/" .env
+        fi
+        echo ""
+        echo "   Please add your API keys to .env:"
+        echo "   - OPENAI_API_KEY=sk-..."
+        echo "   - ANTHROPIC_API_KEY=sk-ant-..."
+    else
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/ENABLE_LLM=true/ENABLE_LLM=false/" .env
+        else
+            sed -i "s/ENABLE_LLM=true/ENABLE_LLM=false/" .env
+        fi
+        echo "   LLM features disabled"
+    fi
+    echo ""
+    
+    # Ask about Jira integration
+    echo "🎫 Enable Jira/Atlassian integration?"
+    read -p "   Enable Jira? [y/N]: " enable_jira
+    if [[ "$enable_jira" =~ ^[Yy]$ ]]; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/ENABLE_JIRA=false/ENABLE_JIRA=true/" .env
+        else
+            sed -i "s/ENABLE_JIRA=false/ENABLE_JIRA=true/" .env
+        fi
+        echo ""
+        echo "   Please configure Jira settings in .env:"
+        echo "   - JIRA_HOST=your-company.atlassian.net"
+        echo "   - JIRA_EMAIL=your-email@company.com"
+        echo "   - JIRA_API_TOKEN=..."
+        echo "   - JIRA_PROJECT_KEY=SEC"
+    else
+        echo "   Jira integration disabled"
+    fi
+    echo ""
+    
+    if [[ "$enable_llm" =~ ^[Yy]$ ]] || [[ "$enable_jira" =~ ^[Yy]$ ]]; then
+        echo "⏸️  Please edit .env with your configuration now."
+        read -p "Press Enter after you've configured .env..."
+    fi
 else
     echo "✅ .env file already exists"
 fi

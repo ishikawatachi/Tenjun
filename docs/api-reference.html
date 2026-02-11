@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference | Threat Modeling Platform</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">🔒 Threat Modeling Platform</div>
+            <ul class="nav-menu">
+                <li><a href="./index.html">Home</a></li>
+                <li><a href="./demo.html">Live Demo</a></li>
+                <li><a href="./architecture.html">Architecture</a></li>
+                <li><a href="./walkthrough.html">Walkthrough</a></li>
+                <li><a href="./api-reference.html" class="active">API Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="demo-header">
+        <div class="container">
+            <h1>📚 API Reference</h1>
+            <p class="demo-subtitle">Complete REST API documentation for the Threat Modeling Platform</p>
+        </div>
+    </section>
+
+    <div class="container" style="padding: 3rem 0;">
+        
+        <!-- Base URL -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🌐 Base URL</h2>
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <pre><code>https://localhost/api</code></pre>
+                <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.875rem;">
+                    All API requests should be made to this base URL. The API accepts JSON payloads and returns JSON responses.
+                </p>
+            </div>
+        </section>
+
+        <!-- Authentication -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🔐 Authentication</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Login</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Authenticate and receive a JWT token for subsequent requests.
+                </p>
+                <pre><code>POST /api/auth/login</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Request Body</h4>
+                <pre><code>{
+  "username": "admin",
+  "password": "secure-password"
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "role": "admin",
+    "email": "admin@example.com"
+  },
+  "expiresIn": "24h"
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">cURL Example</h4>
+                <pre><code>curl -X POST https://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"secure-password"}' \
+  -k</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">Using the Token</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Include the JWT token in the Authorization header for authenticated requests:
+                </p>
+                <pre><code>Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...</code></pre>
+                
+                <div style="background: #fef3c7; border: 1px solid #fbbf24; color: #92400e; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; font-size: 0.875rem;">
+                    <strong>Note:</strong> Tokens are signed using RS256 (RSA asymmetric encryption) and expire after 24 hours.
+                </div>
+            </div>
+        </section>
+
+        <!-- Threat Models -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🗂️ Threat Models</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">List Threat Models</h3>
+                <pre><code>GET /api/threat-models</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Query Parameters</h4>
+                <ul style="color: var(--text-secondary); line-height: 2;">
+                    <li><code>page</code> - Page number (default: 1)</li>
+                    <li><code>limit</code> - Results per page (default: 20)</li>
+                    <li><code>status</code> - Filter by status (draft, in-review, approved)</li>
+                    <li><code>search</code> - Search by name or description</li>
+                </ul>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "data": [
+    {
+      "id": 1,
+      "name": "E-Commerce Platform",
+      "description": "Cloud-based e-commerce system",
+      "created_at": "2025-01-15T10:30:00Z",
+      "updated_at": "2025-01-15T14:20:00Z",
+      "status": "approved",
+      "threat_count": 12,
+      "high_severity_count": 3
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 45,
+    "pages": 3
+  }
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">cURL Example</h4>
+                <pre><code>curl -X GET "https://localhost/api/threat-models?page=1&limit=10" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -k</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Create Threat Model</h3>
+                <pre><code>POST /api/threat-models</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Request Body</h4>
+                <pre><code>{
+  "name": "Mobile Banking App",
+  "description": "iOS and Android banking application",
+  "cloud_provider": "aws",
+  "components": ["api-gateway", "auth", "database", "cache"],
+  "technologies": ["React Native", "Node.js", "PostgreSQL"],
+  "compliance_requirements": ["PCI-DSS", "SOC 2"]
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (201 Created)</h4>
+                <pre><code>{
+  "id": 46,
+  "name": "Mobile Banking App",
+  "status": "draft",
+  "created_at": "2025-01-20T09:15:00Z",
+  "url": "/api/threat-models/46"
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Get Threat Model Details</h3>
+                <pre><code>GET /api/threat-models/:id</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "id": 1,
+  "name": "E-Commerce Platform",
+  "description": "Cloud-based e-commerce system",
+  "cloud_provider": "aws",
+  "components": ["web-server", "api-gateway", "database", "storage"],
+  "status": "approved",
+  "created_at": "2025-01-15T10:30:00Z",
+  "threats": [
+    {
+      "id": "T-001",
+      "category": "tampering",
+      "name": "SQL Injection in Product Search",
+      "severity": "critical",
+      "status": "open",
+      "jira_ticket": "SEC-123"
+    }
+  ],
+  "analyses": [
+    {
+      "id": 1,
+      "completed_at": "2025-01-15T14:20:00Z",
+      "threats_found": 12,
+      "llm_used": true
+    }
+  ]
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Update Threat Model</h3>
+                <pre><code>PUT /api/threat-models/:id</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Request Body</h4>
+                <pre><code>{
+  "status": "approved",
+  "components": ["web-server", "api-gateway", "database", "storage", "cdn"]
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "message": "Threat model updated successfully",
+  "updated_fields": ["status", "components", "updated_at"]
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">Delete Threat Model</h3>
+                <pre><code>DELETE /api/threat-models/:id</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (204 No Content)</h4>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                    Returns empty body on successful deletion.
+                </p>
+            </div>
+        </section>
+
+        <!-- Analysis -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🔬 Threat Analysis</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Analyze System</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Submit system configuration for automated threat analysis.
+                </p>
+                <pre><code>POST /api/analysis/analyze</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Request Body</h4>
+                <pre><code>{
+  "threat_model_id": 1,
+  "infrastructure_as_code": "# Terraform configuration\n...",
+  "iac_type": "terraform",
+  "enable_llm": true,
+  "stride_categories": ["spoofing", "tampering", "information"]
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (202 Accepted)</h4>
+                <pre><code>{
+  "analysis_id": "analysis-123456",
+  "status": "processing",
+  "estimated_time": "2-5 minutes",
+  "status_url": "/api/analysis/analysis-123456/status"
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">cURL Example</h4>
+                <pre><code>curl -X POST https://localhost/api/analysis/analyze \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d @system-config.json \
+  -k</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Get Analysis Status</h3>
+                <pre><code>GET /api/analysis/:id/status</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "analysis_id": "analysis-123456",
+  "status": "completed",
+  "progress": 100,
+  "started_at": "2025-01-20T10:00:00Z",
+  "completed_at": "2025-01-20T10:03:42Z",
+  "threats_found": 18,
+  "results_url": "/api/analysis/analysis-123456"
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">Get Analysis Results</h3>
+                <pre><code>GET /api/analysis/:id</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "analysis_id": "analysis-123456",
+  "threat_model_id": 1,
+  "completed_at": "2025-01-20T10:03:42Z",
+  "summary": {
+    "total_threats": 18,
+    "critical": 3,
+    "high": 7,
+    "medium": 6,
+    "low": 2
+  },
+  "threats": [
+    {
+      "id": "T-001",
+      "category": "information",
+      "name": "Exposed S3 Bucket with Sensitive Data",
+      "severity": "critical",
+      "description": "S3 bucket 'user-uploads' has public read access enabled...",
+      "mitigation": "1. Remove public access\n2. Enable bucket encryption\n3. Implement access logging",
+      "compliance": ["GDPR Article 32", "NIST SC-28", "PCI-DSS 3.4"],
+      "cwe_id": "CWE-922",
+      "cvss_score": 9.1,
+      "affected_components": ["storage", "api-gateway"]
+    }
+  ],
+  "data_flow_diagram": "https://localhost/api/analysis/analysis-123456/dfd.png"
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Jira Integration -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🎫 Jira Integration</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Check Jira Status</h3>
+                <pre><code>GET /api/jira/status</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "enabled": true,
+  "connected": true,
+  "host": "company.atlassian.net",
+  "project_key": "SEC",
+  "last_sync": "2025-01-20T09:30:00Z"
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Sync Threats to Jira</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Create Jira issues for threats in a threat model.
+                </p>
+                <pre><code>POST /api/jira/sync</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Request Body</h4>
+                <pre><code>{
+  "threat_model_id": 1,
+  "severity_filter": "high",
+  "auto_assign": true,
+  "label": "security-review"
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "synced": 10,
+  "skipped": 2,
+  "failed": 0,
+  "issues": [
+    {
+      "threat_id": "T-001",
+      "jira_key": "SEC-456",
+      "url": "https://company.atlassian.net/browse/SEC-456"
+    }
+  ]
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Update Issue Status</h3>
+                <pre><code>POST /api/jira/update-status</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Request Body</h4>
+                <pre><code>{
+  "jira_key": "SEC-456",
+  "status": "In Progress",
+  "comment": "Working on implementing fix"
+}</code></pre>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "message": "Status updated successfully",
+  "jira_key": "SEC-456",
+  "new_status": "In Progress"
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">Get Threat Trend Report</h3>
+                <pre><code>GET /api/jira/report</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Query Parameters</h4>
+                <ul style="color: var(--text-secondary); line-height: 2;">
+                    <li><code>start_date</code> - Start date (ISO 8601)</li>
+                    <li><code>end_date</code> - End date (ISO 8601)</li>
+                    <li><code>group_by</code> - Group by (week, month)</li>
+                </ul>
+
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "period": "2025-01-01T00:00:00Z to 2025-01-31T23:59:59Z",
+  "total_threats": 156,
+  "resolved": 89,
+  "in_progress": 42,
+  "open": 25,
+  "trend": [
+    {
+      "date": "2025-01-01",
+      "created": 23,
+      "resolved": 12
+    }
+  ]
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Health & Monitoring -->
+        <section style="margin-bottom: 4rem;">
+            <h2>💚 Health & Monitoring</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">API Health Check</h3>
+                <pre><code>GET /api/health</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "status": "healthy",
+  "timestamp": "2025-01-20T10:00:00Z",
+  "uptime": 345600,
+  "services": {
+    "database": "healthy",
+    "analysis": "healthy",
+    "llm": "healthy",
+    "jira": "healthy"
+  },
+  "version": "1.0.0"
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">System Metrics</h3>
+                <pre><code>GET /api/metrics</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Response (200 OK)</h4>
+                <pre><code>{
+  "requests": {
+    "total": 15423,
+    "success": 15102,
+    "errors": 321,
+    "average_response_time": 245
+  },
+  "database": {
+    "threat_models": 45,
+    "threats": 678,
+    "analyses": 112
+  },
+  "cache": {
+    "hit_rate": 0.87,
+    "size_mb": 124
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Error Codes -->
+        <section style="margin-bottom: 4rem;">
+            <h2>⚠️ Error Codes</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="text-align: left; padding: 1rem; color: var(--primary-color);">Code</th>
+                            <th style="text-align: left; padding: 1rem; color: var(--primary-color);">Message</th>
+                            <th style="text-align: left; padding: 1rem; color: var(--primary-color);">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>200</code></td>
+                            <td style="padding: 1rem;">OK</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Request succeeded</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>201</code></td>
+                            <td style="padding: 1rem;">Created</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Resource created successfully</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>202</code></td>
+                            <td style="padding: 1rem;">Accepted</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Request accepted for processing</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>204</code></td>
+                            <td style="padding: 1rem;">No Content</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Successful deletion</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>400</code></td>
+                            <td style="padding: 1rem;">Bad Request</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Invalid request parameters</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>401</code></td>
+                            <td style="padding: 1rem;">Unauthorized</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Authentication required or invalid token</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>403</code></td>
+                            <td style="padding: 1rem;">Forbidden</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Insufficient permissions</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>404</code></td>
+                            <td style="padding: 1rem;">Not Found</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Resource does not exist</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>429</code></td>
+                            <td style="padding: 1rem;">Too Many Requests</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Rate limit exceeded</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 1rem;"><code>500</code></td>
+                            <td style="padding: 1rem;">Internal Server Error</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Server error occurred</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 1rem;"><code>503</code></td>
+                            <td style="padding: 1rem;">Service Unavailable</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">Service temporarily unavailable</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 style="margin-top: 2rem; margin-bottom: 1rem;">Error Response Format</h4>
+                <pre><code>{
+  "status": "error",
+  "code": "INVALID_INPUT",
+  "message": "The 'name' field is required",
+  "details": {
+    "field": "name",
+    "provided": null,
+    "expected": "string"
+  },
+  "timestamp": "2025-01-20T10:00:00Z"
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Rate Limiting -->
+        <section style="margin-bottom: 4rem;">
+            <h2>⏱️ Rate Limiting</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    The API implements rate limiting to ensure fair usage. Limits are applied per IP address and authenticated user.
+                </p>
+                
+                <h4 style="margin-bottom: 1rem;">Default Limits</h4>
+                <ul style="color: var(--text-secondary); line-height: 2; margin-bottom: 2rem;">
+                    <li><strong>Anonymous:</strong> 60 requests/hour</li>
+                    <li><strong>Authenticated:</strong> 1000 requests/hour</li>
+                    <li><strong>Analysis endpoints:</strong> 10 requests/hour</li>
+                </ul>
+
+                <h4 style="margin-bottom: 1rem;">Rate Limit Headers</h4>
+                <pre><code>X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 847
+X-RateLimit-Reset: 1642687200</code></pre>
+
+                <div style="background: #fef3c7; border: 1px solid #fbbf24; color: #92400e; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; font-size: 0.875rem;">
+                    <strong>Note:</strong> When rate limit is exceeded, the API returns a 429 status code with a Retry-After header.
+                </div>
+            </div>
+        </section>
+
+        <!-- Webhooks -->
+        <section style="margin-bottom: 4rem;">
+            <h2>🔔 Webhooks</h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">Jira Webhook</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Receive notifications when Jira issues are updated.
+                </p>
+                <pre><code>POST /api/webhooks/jira</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Webhook Payload (from Jira)</h4>
+                <pre><code>{
+  "webhookEvent": "jira:issue_updated",
+  "issue": {
+    "key": "SEC-456",
+    "fields": {
+      "status": {
+        "name": "Done"
+      }
+    }
+  }
+}</code></pre>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                <h3 style="margin-bottom: 1rem;">GitHub Webhook</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Monitor repository changes for IaC file updates.
+                </p>
+                <pre><code>POST /api/webhooks/github</code></pre>
+                
+                <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Configuration in GitHub</h4>
+                <ul style="color: var(--text-secondary); line-height: 2; margin-top: 1rem;">
+                    <li><strong>Payload URL:</strong> https://your-domain.com/api/webhooks/github</li>
+                    <li><strong>Content type:</strong> application/json</li>
+                    <li><strong>Events:</strong> Push, Pull request</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SDKs & Examples -->
+        <section style="margin-bottom: 4rem;">
+            <h2>💻 SDK Examples</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                
+                <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                    <h4 style="color: var(--primary-color); margin-bottom: 1rem;">JavaScript (Node.js)</h4>
+                    <pre style="font-size: 0.85rem;"><code>const axios = require('axios');
+
+// Login
+const { data } = await axios.post(
+  'https://localhost/api/auth/login',
+  { username: 'admin', password: 'pass' }
+);
+
+// Use token
+const threats = await axios.get(
+  'https://localhost/api/threat-models',
+  {
+    headers: {
+      'Authorization': `Bearer ${data.token}`
+    }
+  }
+);</code></pre>
+                </div>
+
+                <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                    <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Python</h4>
+                    <pre style="font-size: 0.85rem;"><code>import requests
+
+# Login
+response = requests.post(
+    'https://localhost/api/auth/login',
+    json={
+        'username': 'admin',
+        'password': 'pass'
+    },
+    verify=False
+)
+token = response.json()['token']
+
+# Use token
+threats = requests.get(
+    'https://localhost/api/threat-models',
+    headers={'Authorization': f'Bearer {token}'},
+    verify=False
+).json()</code></pre>
+                </div>
+
+                <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-md);">
+                    <h4 style="color: var(--primary-color); margin-bottom: 1rem;">cURL</h4>
+                    <pre style="font-size: 0.85rem;"><code># Login and save token
+TOKEN=$(curl -X POST \
+  https://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"pass"}' \
+  -k | jq -r '.token')
+
+# Use token
+curl -X GET \
+  https://localhost/api/threat-models \
+  -H "Authorization: Bearer $TOKEN" \
+  -k</code></pre>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Next Steps -->
+        <section style="text-align: center; margin-top: 4rem;">
+            <h3>🚀 Ready to Get Started?</h3>
+            <p style="color: var(--text-secondary); margin: 2rem 0;">
+                Install the platform and start building automated threat models.
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="./walkthrough.html" class="btn btn-primary">
+                    <span>Installation Guide</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a href="./demo.html" class="btn btn-secondary">
+                    Try Live Demo
+                </a>
+                <a href="./architecture.html" class="btn btn-secondary">
+                    View Architecture
+                </a>
+            </div>
+        </section>
+
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Threat Modeling Platform. <a href="./index.html">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture | Threat Modeling Platform</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">🔒 Threat Modeling Platform</div>
+            <ul class="nav-menu">
+                <li><a href="./index.html">Home</a></li>
+                <li><a href="./demo.html">Live Demo</a></li>
+                <li><a href="./architecture.html" class="active">Architecture</a></li>
+                <li><a href="./walkthrough.html">Walkthrough</a></li>
+                <li><a href="./api-reference.html">API Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="demo-header">
+        <div class="container">
+            <h1>🏗️ System Architecture</h1>
+            <p class="demo-subtitle">Detailed technical architecture and data flows</p>
+        </div>
+    </section>
+
+    <div class="container" style="padding: 3rem 0;">
+        
+        <!-- High-Level Architecture -->
+        <section style="margin-bottom: 4rem;">
+            <h2>High-Level Architecture</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                The Threat Modeling Platform follows a microservices architecture with separate concerns 
+                for presentation, business logic, analysis, and integrations.
+            </p>
+            <div class="mermaid">
+graph TB
+    subgraph Client["🌐 Client Layer"]
+        Browser[Web Browser]
+    end
+    
+    subgraph Proxy["🔀 Reverse Proxy"]
+        Nginx[Nginx<br/>Port 443/80]
+    end
+    
+    subgraph Frontend["🖥️ Frontend Service"]
+        React[React App<br/>Port 3000]
+        Redux[State Management]
+    end
+    
+    subgraph Backend["⚙️ Backend Services"]
+        API[Express API<br/>Port 3001]
+        Auth[Authentication]
+        Routes[Route Handlers]
+    end
+    
+    subgraph Storage["💾 Data Layer"]
+        DB[(SQLite DB<br/>Encrypted)]
+        Keys[RSA Keys]
+    end
+    
+    subgraph Analysis["🔬 Analysis Service"]
+        Flask[Flask API<br/>Port 5000]
+        DFD[DFD Generator]
+        TParser[Terraform Parser]
+    end
+    
+    subgraph AI["🤖 AI Services"]
+        LLM[LLM Client]
+        OpenAI[OpenAI GPT-4]
+        Anthropic[Anthropic Claude]
+    end
+    
+    subgraph External["🔗 External APIs"]
+        Jira[Jira Cloud API]
+        GitHub[GitHub API]
+    end
+    
+    Browser --> Nginx
+    Nginx --> React
+    Nginx --> API
+    Nginx --> Flask
+    
+    React --> Redux
+    React --> API
+    
+    API --> Auth
+    API --> Routes
+    API --> DB
+    API --> Keys
+    
+    Routes --> Flask
+    Routes --> Jira
+    Routes --> GitHub
+    
+    Flask --> DFD
+    Flask --> TParser
+    Flask --> LLM
+    
+    LLM --> OpenAI
+    LLM --> Anthropic
+    
+    style Client fill:#e3f2fd
+    style Proxy fill:#f3e5f5
+    style Frontend fill:#e8f5e9
+    style Backend fill:#fff3e0
+    style Storage fill:#fce4ec
+    style Analysis fill:#f1f8e9
+    style AI fill:#e0f2f1
+    style External fill:#fff9c4
+            </div>
+        </section>
+
+        <!-- API Data Flow -->
+        <section style="margin-bottom: 4rem;">
+            <h2>API Request Flow</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Request lifecycle showing middleware, authentication, and response handling.
+            </p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Client
+    participant Nginx
+    participant API
+    participant Auth
+    participant DB
+    participant Analysis
+    participant LLM
+    
+    Client->>Nginx: HTTPS Request
+    Nginx->>API: Forward to API (Port 3001)
+    
+    API->>API: Logging Middleware
+    API->>API: CORS Check
+    API->>API: Rate Limiting
+    API->>API: Body Parsing
+    
+    alt Protected Route
+        API->>Auth: Verify JWT Token
+        Auth->>Auth: Validate RS256 Signature
+        Auth-->>API: User Context
+    end
+    
+    API->>DB: Query/Update Data
+    DB-->>API: Data Response
+    
+    alt Threat Analysis Required
+        API->>Analysis: POST /analyze
+        Analysis->>Analysis: Parse IaC
+        Analysis->>Analysis: Generate DFD
+        Analysis->>LLM: AI Analysis Request
+        LLM->>LLM: GPT-4/Claude API
+        LLM-->>Analysis: Threats JSON
+        Analysis-->>API: Analysis Results
+    end
+    
+    API->>API: Format Response
+    API-->>Nginx: JSON Response
+    Nginx-->>Client: HTTPS Response
+            </div>
+        </section>
+
+        <!-- Database Schema -->
+        <section style="margin-bottom: 4rem;">
+            <h2>Database Schema</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Entity-relationship diagram showing core data models and relationships.
+            </p>
+            <div class="mermaid">
+erDiagram
+    USERS ||--o{ THREAT_MODELS : creates
+    USERS ||--o{ THREATS : assigned_to
+    THREAT_MODELS ||--o{ ANALYSES : has
+    THREAT_MODELS ||--o{ THREATS : contains
+    THREATS ||--o{ COMPLIANCE_MAPPINGS : maps_to
+    USERS ||--o{ AUDIT_LOGS : performs
+    
+    USERS {
+        text id PK
+        text email UK
+        text password_hash
+        text role
+        datetime created_at
+        datetime updated_at
+    }
+    
+    THREAT_MODELS {
+        text id PK
+        text name
+        text description
+        text status
+        text methodology
+        text cloud_providers
+        text data_flow_diagram
+        text created_by FK
+        datetime created_at
+    }
+    
+    THREATS {
+        text id PK
+        text threat_model_id FK
+        text category
+        text name
+        text description
+        text severity
+        text likelihood
+        text impact
+        text status
+        text mitigation
+        text assigned_to FK
+        text jira_ticket
+    }
+    
+    ANALYSES {
+        text id PK
+        text threat_model_id FK
+        text status
+        text dfd_json
+        text threats_json
+        datetime started_at
+        datetime completed_at
+    }
+    
+    COMPLIANCE_MAPPINGS {
+        text id PK
+        text threat_id FK
+        text framework
+        text control_id
+        text control_name
+        text status
+    }
+    
+    AUDIT_LOGS {
+        int id PK
+        text user_id FK
+        text action
+        text resource_type
+        text resource_id
+        text changes_json
+        datetime timestamp
+    }
+            </div>
+        </section>
+
+        <!-- Threat Analysis Pipeline -->
+        <section style="margin-bottom: 4rem;">
+            <h2>Threat Analysis Pipeline</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Step-by-step process for automated threat identification and analysis.
+            </p>
+            <div class="mermaid">
+flowchart TD
+    Start([User Submits<br/>System Info]) --> Parse[Parse IaC Files]
+    
+    Parse --> Terraform{Terraform?}
+    Parse --> K8s{Kubernetes?}
+    Parse --> Manual{Manual Input?}
+    
+    Terraform -->|Yes| TFParse[Parse .tf Files]
+    K8s -->|Yes| K8sParse[Parse YAML]
+    Manual -->|Yes| ManualParse[Process Form Data]
+    
+    TFParse --> Extract
+    K8sParse --> Extract
+    ManualParse --> Extract
+    
+    Extract[Extract Components] --> DFD[Generate DFD]
+    
+    DFD --> Boundaries[Identify Trust<br/>Boundaries]
+    Boundaries --> DataFlows[Map Data Flows]
+    DataFlows --> Assets[Classify Assets]
+    
+    Assets --> STRIDE[Apply STRIDE<br/>Methodology]
+    
+    STRIDE --> Spoofing[Check Spoofing]
+    STRIDE --> Tampering[Check Tampering]
+    STRIDE --> Repudiation[Check Repudiation]
+    STRIDE --> Information[Check Info Disclosure]
+    STRIDE --> DoS[Check DoS]
+    STRIDE --> Elevation[Check Privilege Elevation]
+    
+    Spoofing --> LLM
+    Tampering --> LLM
+    Repudiation --> LLM
+    Information --> LLM
+    DoS --> LLM
+    Elevation --> LLM
+    
+    LLM{LLM Enabled?} -->|Yes| AI[AI Analysis<br/>GPT-4/Claude]
+    LLM -->|No| Rules[Rule-Based<br/>Detection]
+    
+    AI --> Enrich[Enrich Threats]
+    Rules --> Enrich
+    
+    Enrich --> Severity[Calculate Severity]
+    Severity --> Compliance[Map Compliance]
+    Compliance --> Mitigation[Generate Mitigations]
+    
+    Mitigation --> Store[(Store in DB)]
+    Store --> Jira{Jira Enabled?}
+    
+    Jira -->|Yes| CreateTickets[Create Jira Tickets]
+    Jira -->|No| Skip
+    
+    CreateTickets --> Results
+    Skip --> Results
+    
+    Results([Return Results<br/>to User])
+    
+    style Start fill:#e8f5e9
+    style Results fill:#e8f5e9
+    style LLM fill:#fff3e0
+    style Jira fill:#fff3e0
+    style Store fill:#fce4ec
+            </div>
+        </section>
+
+        <!-- Technology Stack -->
+        <section style="margin-bottom: 4rem;">
+            <h2>Technology Stack Layers</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Comprehensive view of all technologies used across the platform.
+            </p>
+            <div class="mermaid">
+flowchart TB
+    subgraph Presentation["🎨 Presentation Layer"]
+        React[React 19]
+        TS[TypeScript 5.3]
+        Mantine[Mantine UI]
+        Redux[Redux Toolkit]
+        Axios[Axios]
+    end
+    
+    subgraph API_Layer["🔌 API Layer"]
+        Express[Express 4.18]
+        NodeTS[Node.js + TypeScript]
+        JWT[JWT RS256]
+        Helmet[Helmet Security]
+        RateLimit[Rate Limiting]
+    end
+    
+    subgraph Business["💼 Business Logic"]
+        Services[Service Layer]
+        Controllers[Controllers]
+        Middleware[Middleware]
+        Validation[Zod Validation]
+    end
+    
+    subgraph Analysis_Layer["🔬 Analysis Layer"]
+        Flask_API[Flask]
+        Python[Python 3.11]
+        LLM_Client[LLM Client]
+        Parsers[IaC Parsers]
+    end
+    
+    subgraph Data_Layer["💾 Data Layer"]
+        SQLite[SQLite]
+        SQLCipher[SQLCipher Encryption]
+        Migrations[Schema Migrations]
+    end
+    
+    subgraph External_Layer["🌐 External Services"]
+        OpenAI_API[OpenAI API]
+        Anthropic_API[Anthropic API]
+        Jira_API[Jira REST API]
+        GitHub_API[GitHub API]
+    end
+    
+    subgraph Infrastructure["🐳 Infrastructure"]
+        Docker[Docker]
+        Compose[Docker Compose]
+        Nginx_Proxy[Nginx]
+        SSL[SSL/TLS]
+    end
+    
+    Presentation --> API_Layer
+    API_Layer --> Business
+    Business --> Data_Layer
+    API_Layer --> Analysis_Layer
+    Analysis_Layer --> External_Layer
+    Business --> External_Layer
+    
+    Infrastructure -.-> Presentation
+    Infrastructure -.-> API_Layer
+    Infrastructure -.-> Analysis_Layer
+    
+    style Presentation fill:#e3f2fd
+    style API_Layer fill:#f3e5f5
+    style Business fill:#fff3e0
+    style Analysis_Layer fill:#e8f5e9
+    style Data_Layer fill:#fce4ec
+    style External_Layer fill:#fff9c4
+    style Infrastructure fill:#e0f2f1
+            </div>
+        </section>
+
+        <!-- Security Architecture -->
+        <section style="margin-bottom: 4rem;">
+            <h2>Security Architecture</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Multi-layered security controls protecting the platform.
+            </p>
+            <div class="mermaid">
+graph TB
+    subgraph Network["🌐 Network Security"]
+        SSL[SSL/TLS<br/>Encryption]
+        Nginx[Nginx Reverse<br/>Proxy]
+        Firewall[Docker Network<br/>Isolation]
+    end
+    
+    subgraph App["🔐 Application Security"]
+        Auth[JWT RS256<br/>Authentication]
+        RBAC[Role-Based<br/>Access Control]
+        CSRF[CSRF Protection]
+        Helmet[Security Headers<br/>Helmet]
+        RateLimit[Rate Limiting]
+        Input[Input Validation<br/>Zod]
+    end
+    
+    subgraph Data["💾 Data Security"]
+        EncryptDB[Database<br/>Encryption AES-256]
+        EncryptTransit[TLS 1.3<br/>In Transit]
+        KeyMgmt[RSA Key<br/>Management]
+        Backup[Encrypted<br/>Backups]
+    end
+    
+    subgraph Audit["📋 Audit & Monitoring"]
+        Logs[Audit Logs]
+        Winston[Winston Logger]
+        Health[Health Checks]
+        Alerts[Security Alerts]
+    end
+    
+    Network --> App
+    App --> Data
+    Data --> Audit
+    
+    style Network fill:#ffebee
+    style App fill:#fff3e0
+    style Data fill:#e8f5e9
+    style Audit fill:#e3f2fd
+            </div>
+        </section>
+
+        <!-- Deployment Architecture -->
+        <section style="margin-bottom: 4rem;">
+            <h2>Deployment Architecture</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                Docker-based deployment with service orchestration.
+            </p>
+            <div class="mermaid">
+graph TB
+    subgraph Host["🖥️ Host System (Linux/macOS/Windows)"]
+        Docker[Docker Engine]
+        Compose[Docker Compose]
+    end
+    
+    subgraph Network["🔀 Docker Network: threat-model-net"]
+        Nginx_Container[nginx<br/>Port 80/443]
+        
+        subgraph Services["Services"]
+            Frontend_Container[frontend<br/>React Build]
+            API_Container[api<br/>Node.js + TS]
+            Analysis_Container[analysis<br/>Python + Flask]
+            DB_Init[db-init<br/>Schema Setup]
+        end
+        
+        subgraph Volumes["📦 Volumes"]
+            DB_Volume[(db-data)]
+            Logs_Volume[(logs)]
+            SSL_Volume[(ssl-certs)]
+            Keys_Volume[(rsa-keys)]
+        end
+    end
+    
+    Docker --> Compose
+    Compose --> Network
+    
+    Nginx_Container --> Frontend_Container
+    Nginx_Container --> API_Container
+    Nginx_Container --> Analysis_Container
+    
+    API_Container --> DB_Volume
+    API_Container --> Keys_Volume
+    API_Container --> Logs_Volume
+    Analysis_Container --> Logs_Volume
+    Nginx_Container --> SSL_Volume
+    
+    DB_Init --> DB_Volume
+    
+    style Host fill:#e3f2fd
+    style Network fill:#f3e5f5
+    style Services fill:#fff3e0
+    style Volumes fill:#e8f5e9
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <section style="text-align: center; margin-top: 4rem;">
+            <h3>Explore More</h3>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                <a href="demo.html" class="btn btn-primary">
+                    <span>Try Interactive Demo</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a href="walkthrough.html" class="btn btn-secondary">
+                    Installation Walkthrough
+                </a>
+                <a href="api-reference.html" class="btn btn-secondary">
+                    API Reference
+                </a>
+            </div>
+        </section>
+
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2026 Threat Modeling Platform. <a href="./index.html">Back to Home</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

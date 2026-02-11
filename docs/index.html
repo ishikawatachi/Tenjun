@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Threat Modeling Platform - AI-powered security threat analysis and modeling for cloud applications">
+    <title>Threat Modeling Platform | AI-Powered Security Analysis</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">🔒 Threat Modeling Platform</div>
+            <ul class="nav-menu">
+                <li><a href="./index.html" class="active">Home</a></li>
+                <li><a href="./demo.html">Live Demo</a></li>
+                <li><a href="./architecture.html">Architecture</a></li>
+                <li><a href="./walkthrough.html">Walkthrough</a></li>
+                <li><a href="./api-reference.html">API Docs</a></li>
+                <li><a href="https://github.com/yourusername/threat-model-platform" target="_blank">GitHub ↗</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="badge">Open Source • Production Ready • AI-Powered</div>
+                <h1>🛡️ Threat Modeling Platform</h1>
+                <p class="hero-subtitle">Comprehensive Security Threat Analysis & Modeling</p>
+                <p class="hero-description">
+                    Automated threat detection with AI-powered analysis, Jira integration, 
+                    and comprehensive compliance mapping. Deploy in minutes with Docker.
+                </p>
+                <div class="hero-buttons">
+                    <a href="demo.html" class="btn btn-primary btn-lg">
+                        <span>Try Interactive Demo</span>
+                        <span class="arrow">→</span>
+                    </a>
+                    <a href="walkthrough.html" class="btn btn-secondary btn-lg">
+                        <span>Installation Guide</span>
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <strong>60+</strong>
+                        <span>Automated Tests</span>
+                    </div>
+                    <div class="stat">
+                        <strong>7</strong>
+                        <span>Threat Categories</span>
+                    </div>
+                    <div class="stat">
+                        <strong>8</strong>
+                        <span>Compliance Frameworks</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">✨ Powerful Features</h2>
+            <p class="section-subtitle">Everything you need for comprehensive threat modeling</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI-Powered Analysis</h3>
+                    <p>Leverage OpenAI GPT-4 or Anthropic Claude for intelligent threat detection, risk assessment, and automated security recommendations.</p>
+                    <ul class="feature-list">
+                        <li>Automated threat identification</li>
+                        <li>Risk scoring and prioritization</li>
+                        <li>Mitigation suggestions</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎫</div>
+                    <h3>Jira Integration</h3>
+                    <p>Seamless bidirectional sync with Jira Cloud for complete threat lifecycle management and team collaboration.</p>
+                    <ul class="feature-list">
+                        <li>Auto-create Jira tickets</li>
+                        <li>Status synchronization</li>
+                        <li>Webhook integration</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Data Flow Diagrams</h3>
+                    <p>Interactive DFD visualization with automated threat identification across system boundaries and data flows.</p>
+                    <ul class="feature-list">
+                        <li>Visual threat mapping</li>
+                        <li>Component analysis</li>
+                        <li>Trust boundary detection</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>STRIDE Analysis</h3>
+                    <p>Comprehensive threat categorization using Microsoft's STRIDE methodology for systematic security analysis.</p>
+                    <ul class="feature-list">
+                        <li>Spoofing detection</li>
+                        <li>Tampering analysis</li>
+                        <li>Elevation of privilege checks</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">☁️</div>
+                    <h3>Multi-Cloud Support</h3>
+                    <p>Analyze threats across AWS, Azure, GCP, and Kubernetes with cloud-specific security patterns.</p>
+                    <ul class="feature-list">
+                        <li>Cloud-native threats</li>
+                        <li>IaC security scanning</li>
+                        <li>Terraform analysis</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Compliance Mapping</h3>
+                    <p>Automatic mapping of threats to compliance frameworks and security standards.</p>
+                    <ul class="feature-list">
+                        <li>NIST, ISO 27001, SOC 2</li>
+                        <li>PCI-DSS, HIPAA, GDPR</li>
+                        <li>CIS, OWASP Top 10</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Enterprise Security</h3>
+                    <p>Built with security-first principles including encryption, audit logs, and access controls.</p>
+                    <ul class="feature-list">
+                        <li>RSA-2048 JWT authentication</li>
+                        <li>AES-256 database encryption</li>
+                        <li>Comprehensive audit trail</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🐳</div>
+                    <h3>Easy Deployment</h3>
+                    <p>One-command deployment with Docker Compose and cross-platform installers for Linux, macOS, and Windows.</p>
+                    <ul class="feature-list">
+                        <li>Automated setup scripts</li>
+                        <li>Health checks included</li>
+                        <li>Production ready</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="architecture-preview">
+        <div class="container">
+            <h2 class="section-title">🏗️ System Architecture</h2>
+            <p class="section-subtitle">Modern microservices architecture with Docker and RESTful APIs</p>
+            
+            <div class="mermaid">
+graph TB
+    subgraph Frontend["🖥️ Frontend Layer"]
+        UI[React + TypeScript]
+        Redux[Redux Toolkit]
+        Mantine[Mantine UI]
+    end
+    
+    subgraph Backend["⚙️ Backend Layer"]
+        API[Express API<br/>Node.js + TypeScript]
+        Auth[JWT Auth<br/>RS256]
+        DB[(SQLite<br/>Encrypted)]
+    end
+    
+    subgraph Analysis["🔬 Analysis Engine"]
+        Flask[Flask Service<br/>Python]
+        LLM[LLM Client]
+        Parser[IaC Parser<br/>Terraform/K8s]
+    end
+    
+    subgraph External["🔗 External Services"]
+        OpenAI[OpenAI<br/>GPT-4]
+        Anthropic[Anthropic<br/>Claude]
+        Jira[Jira Cloud<br/>REST API]
+        GitHub[GitHub API]
+    end
+    
+    UI --> API
+    Redux --> API
+    API --> Auth
+    API --> DB
+    API --> Flask
+    Flask --> LLM
+    LLM --> OpenAI
+    LLM --> Anthropic
+    API --> Jira
+    API --> GitHub
+    
+    style Frontend fill:#e3f2fd
+    style Backend fill:#f3e5f5
+    style Analysis fill:#fff3e0
+    style External fill:#e8f5e9
+            </div>
+            
+            <div class="text-center" style="margin-top: 2rem;">
+                <a href="architecture.html" class="btn btn-secondary">View Detailed Architecture →</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo-preview">
+        <div class="container">
+            <h2 class="section-title">🎮 Interactive Demo</h2>
+            <p class="section-subtitle">Try threat modeling in your browser - no installation required</p>
+            
+            <div class="demo-container">
+                <div class="demo-mockup">
+                    <div class="browser-chrome">
+                        <div class="browser-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <div class="browser-title">Threat Analysis Dashboard</div>
+                    </div>
+                    <div class="browser-content">
+                        <div class="demo-sidebar">
+                            <div class="demo-section">
+                                <h4>System Details</h4>
+                                <div class="demo-field">
+                                    <label>Name:</label>
+                                    <span>E-Commerce Platform</span>
+                                </div>
+                                <div class="demo-field">
+                                    <label>Cloud:</label>
+                                    <span class="badge-small">AWS</span>
+                                </div>
+                                <div class="demo-field">
+                                    <label>Components:</label>
+                                    <div class="tag-group">
+                                        <span class="tag">API Gateway</span>
+                                        <span class="tag">Lambda</span>
+                                        <span class="tag">RDS</span>
+                                        <span class="tag">S3</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="demo-main">
+                            <div class="threat-card critical">
+                                <span class="severity-badge critical">CRITICAL</span>
+                                <h5>SQL Injection via User Input</h5>
+                                <p class="threat-desc">Unsanitized user input could allow SQL injection attacks</p>
+                                <div class="threat-meta">
+                                    <span class="meta-item">🎯 STRIDE: Tampering</span>
+                                    <span class="meta-item">📋 OWASP A03:2021</span>
+                                </div>
+                            </div>
+                            <div class="threat-card high">
+                                <span class="severity-badge high">HIGH</span>
+                                <h5>S3 Bucket Public Access</h5>
+                                <p class="threat-desc">Misconfigured bucket permissions expose sensitive data</p>
+                                <div class="threat-meta">
+                                    <span class="meta-item">🎯 Information Disclosure</span>
+                                    <span class="meta-item">📋 CIS AWS 2.1.5</span>
+                                </div>
+                            </div>
+                            <div class="threat-card medium">
+                                <span class="severity-badge medium">MEDIUM</span>
+                                <h5>Missing Rate Limiting</h5>
+                                <p class="threat-desc">API endpoints vulnerable to brute force attacks</p>
+                                <div class="threat-meta">
+                                    <span class="meta-item">🎯 Denial of Service</span>
+                                    <span class="meta-item">📋 NIST SC-7</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center" style="margin-top: 2rem;">
+                <a href="demo.html" class="btn btn-primary btn-lg">
+                    <span>Launch Full Interactive Demo</span>
+                    <span class="arrow">→</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="quick-start">
+        <div class="container">
+            <h2 class="section-title">🚀 Get Started in 5 Minutes</h2>
+            <p class="section-subtitle">Cross-platform installation for Linux, macOS, and Windows</p>
+            
+            <div class="install-tabs">
+                <div class="tab active" data-tab="linux">Linux / macOS</div>
+                <div class="tab" data-tab="windows">Windows</div>
+                <div class="tab" data-tab="docker">Docker</div>
+            </div>
+            
+            <div class="tab-content active" data-content="linux">
+                <pre><code># Clone repository
+git clone https://github.com/yourusername/threat-model-platform.git
+cd threat-model-platform
+
+# Run automated installer
+./install.sh
+
+# The installer will:
+# - Validate system requirements (Docker, OpenSSL)
+# - Let you choose features (LLM, Jira, GitHub)
+# - Generate secure encryption keys
+# - Build and deploy all services
+# - Verify installation health</code></pre>
+            </div>
+            
+            <div class="tab-content" data-content="windows">
+                <pre><code># PowerShell (run as Administrator)
+git clone https://github.com/yourusername/threat-model-platform.git
+cd threat-model-platform
+
+# Run PowerShell installer
+.\install.ps1
+
+# Or double-click: install.bat</code></pre>
+            </div>
+            
+            <div class="tab-content" data-content="docker">
+                <pre><code># Quick start with Docker Compose
+docker-compose up -d
+
+# Access application
+# Frontend: https://localhost
+# API: https://localhost/api
+# API Docs: https://localhost/api-docs</code></pre>
+            </div>
+            
+            <div class="text-center" style="margin-top: 2rem;">
+                <a href="walkthrough.html" class="btn btn-secondary">Detailed Walkthrough →</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="tech-stack">
+        <div class="container">
+            <h2 class="section-title">🛠️ Technology Stack</h2>
+            
+            <div class="tech-grid">
+                <div class="tech-category">
+                    <h3>Frontend</h3>
+                    <ul>
+                        <li>React 19 + TypeScript</li>
+                        <li>Redux Toolkit</li>
+                        <li>Mantine UI Components</li>
+                        <li>Mermaid Diagrams</li>
+                        <li>Axios HTTP Client</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h3>Backend API</h3>
+                    <ul>
+                        <li>Node.js + Express 4</li>
+                        <li>TypeScript</li>
+                        <li>JWT RS256 Authentication</li>
+                        <li>SQLite + SQLCipher</li>
+                        <li>Winston Logging</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h3>Analysis Engine</h3>
+                    <ul>
+                        <li>Python 3.11 + Flask</li>
+                        <li>OpenAI GPT-4 API</li>
+                        <li>Anthropic Claude API</li>
+                        <li>Terraform Parser</li>
+                        <li>Kubernetes YAML Parser</li>
+                    </ul>
+                </div>
+                <div class="tech-category">
+                    <h3>Infrastructure</h3>
+                    <ul>
+                        <li>Docker + Docker Compose</li>
+                        <li>Nginx Reverse Proxy</li>
+                        <li>SSL/TLS Encryption</li>
+                        <li>Health Checks</li>
+                        <li>Automated Backups</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Secure Your Systems?</h2>
+            <p>Start threat modeling in minutes with automated installation and AI-powered analysis</p>
+            <div class="cta-buttons">
+                <a href="demo.html" class="btn btn-primary btn-lg">
+                    <span>Try Interactive Demo</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a href="https://github.com/yourusername/threat-model-platform" class="btn btn-secondary btn-lg">
+                    <span>View on GitHub</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>🔒 Threat Modeling Platform</h4>
+                    <p>Open source security threat analysis and modeling platform</p>
+                    <div class="footer-badges">
+                        <span class="badge-small">Open Source</span>
+                        <span class="badge-small">Production Ready</span>
+                        <span class="badge-small">Docker</span>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="./architecture.html">Architecture</a></li>
+                        <li><a href="./walkthrough.html">Installation Guide</a></li>
+                        <li><a href="./api-reference.html">API Reference</a></li>
+                        <li><a href="./demo.html">Live Demo</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/yourusername/threat-model-platform">GitHub Repository</a></li>
+                        <li><a href="https://github.com/yourusername/threat-model-platform/issues">Report Issues</a></li>
+                        <li><a href="https://github.com/yourusername/threat-model-platform/blob/main/README.md">README</a></li>
+                        <li><a href="https://github.com/yourusername/threat-model-platform/blob/main/QUICKSTART.md">Quick Start</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Features</h4>
+                    <ul>
+                        <li>AI-Powered Analysis</li>
+                        <li>Jira Integration</li>
+                        <li>STRIDE Methodology</li>
+                        <li>Compliance Mapping</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Threat Modeling Platform. Open Source MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            securityLevel: 'loose'
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.querySelector(`[data-content="${tabName}"]`).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
