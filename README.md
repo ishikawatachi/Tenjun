@@ -1,6 +1,8 @@
 # Threat Model Platform
 
-A production-ready threat modeling platform with AI-powered analysis capabilities.
+A production-ready threat modeling platform with AI-powered analysis capabilities. Based on the limitations which i encountered with various tools i used the promised interaction with various llms and to identify  a possible cloud and plattform agnostic tool. 
+
+**** WORK INM PROGRESS **** 
 
 ## 🏗️ Architecture
 
