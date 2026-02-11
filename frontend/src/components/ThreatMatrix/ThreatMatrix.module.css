@@ -1,0 +1,339 @@
+/**
+ * ThreatMatrix Styles
+ * 
+ * Risk matrix visualization styling
+ */
+
+.container {
+  width: 100%;
+  padding: 0;
+}
+
+.header {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.filters {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.matrixContainer {
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-8));
+  min-height: 500px;
+}
+
+/* Matrix Layout */
+.matrix {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 12px;
+  width: 100%;
+  min-height: 500px;
+}
+
+.yAxisLabel {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.xAxisLabel {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.grid {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+}
+
+/* Y-axis labels */
+.yAxisLabels {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-right: 8px;
+}
+
+.yAxisLabelItem {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  min-height: 80px;
+}
+
+/* X-axis labels */
+.xAxisLabels {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.xAxisLabelItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Cells Grid */
+.cells {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+
+.cell {
+  position: relative;
+  flex: 1;
+  min-height: 80px;
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  overflow: hidden;
+}
+
+.cell:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.cell:focus {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 2px;
+}
+
+.cell:active {
+  transform: scale(0.98);
+}
+
+/* Bubble */
+.bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease-in-out;
+  animation: bubbleAppear 0.3s ease-out;
+}
+
+@keyframes bubbleAppear {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.cell:hover .bubble {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Legend */
+.legend {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.legendColor {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4));
+}
+
+.legendBubble {
+  border-radius: 50%;
+  background-color: var(--mantine-color-blue-5);
+  border: 2px solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4));
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .matrix {
+    min-height: 400px;
+  }
+  
+  .yAxisLabelItem {
+    min-height: 60px;
+  }
+  
+  .cell {
+    min-height: 60px;
+  }
+  
+  .bubble {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .matrix {
+    min-height: 300px;
+    gap: 8px;
+  }
+  
+  .grid {
+    gap: 4px;
+  }
+  
+  .yAxisLabelItem {
+    min-height: 50px;
+  }
+  
+  .cell {
+    min-height: 50px;
+  }
+  
+  .row {
+    gap: 2px;
+  }
+  
+  .cells {
+    gap: 2px;
+  }
+  
+  .bubble {
+    font-size: 0.65rem;
+    min-width: 16px;
+    min-height: 16px;
+  }
+  
+  .yAxisLabel,
+  .xAxisLabel {
+    font-size: 0.75rem;
+  }
+  
+  .legend {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .matrix {
+    grid-template-columns: 40px 1fr;
+  }
+  
+  .yAxisLabelItem {
+    min-height: 40px;
+  }
+  
+  .cell {
+    min-height: 40px;
+  }
+  
+  .yAxisLabelItem,
+  .xAxisLabelItem {
+    font-size: 0.65rem;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .cell {
+    border-color: var(--mantine-color-dark-4);
+  }
+  
+  .bubble {
+    filter: brightness(0.9);
+  }
+}
+
+/* Print styles */
+@media print {
+  .header,
+  .filters {
+    display: none;
+  }
+  
+  .matrixContainer {
+    border: none;
+    box-shadow: none;
+  }
+  
+  .cell {
+    page-break-inside: avoid;
+  }
+  
+  .cell:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .cell {
+    border-width: 2px;
+  }
+  
+  .bubble {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cell,
+  .bubble {
+    transition: none;
+    animation: none;
+  }
+  
+  .cell:hover {
+    transform: none;
+  }
+}
+
+/* Loading state */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+}
+
+/* Empty state */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+  text-align: center;
+  padding: 2rem;
+}

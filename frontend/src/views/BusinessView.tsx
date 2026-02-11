@@ -4,10 +4,23 @@
  * Executive dashboard with risk metrics and compliance status
  */
 
-import React from 'react';
-import { Container, Title, Text, Stack } from '@mantine/core';
+import React, { useState } from 'react';
+import { Container, Title, Text, Stack, Paper, Drawer } from '@mantine/core';
+import { ThreatMatrix } from '../components/ThreatMatrix';
+import { ThreatCard } from '../components/common/ThreatCard';
+import { useThreatModel } from '../hooks/useThreatModel';
+import type { MatchedThreat } from '../types';
 
 export const BusinessView: React.FC = () => {
+  const { threats } = useThreatModel();
+  const [selectedThreats, setSelectedThreats] = useState<MatchedThreat[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  
+  const handleThreatClick = (cellThreats: MatchedThreat[]) => {
+    setSelectedThreats(cellThreats);
+    setDrawerOpen(true);
+  };
+  
   return (
     <Container size="xl" py="xl">
       <Stack gap="lg">
@@ -18,17 +31,41 @@ export const BusinessView: React.FC = () => {
           </Text>
         </div>
         
-        <Text>
-          This view is under construction. It will include:
-        </Text>
-        <ul>
-          <li>Risk score overview and trends</li>
-          <li>Compliance framework coverage</li>
-          <li>Critical threat summary</li>
-          <li>Business impact assessment</li>
-          <li>Executive reports and exports</li>
-        </ul>
+        {threats.length > 0 ? (
+          <ThreatMatrix threats={threats} onThreatClick={handleThreatClick} />
+        ) : (
+          <Paper p="xl" withBorder>
+            <Stack gap="md" align="center">
+              <Text size="lg" fw={600}>No Threats Analyzed Yet</Text>
+              <Text c="dimmed" ta="center">
+                Upload Terraform configuration in the Architect view to begin threat analysis
+              </Text>
+            </Stack>
+          </Paper>
+        )}
       </Stack>
+      
+      {/* Threat Details Drawer */}
+      <Drawer
+        opened={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={`${selectedThreats.length} Threat(s)`}
+        position="right"
+        size="lg"
+      >
+        <Stack gap="md">
+          {selectedThreats.map((threat) => (
+            <ThreatCard
+              key={threat.matched_threat.id}
+              threat={threat}
+              onClick={() => {
+                // Could navigate to detailed view
+                console.log('Threat clicked:', threat);
+              }}
+            />
+          ))}
+        </Stack>
+      </Drawer>
     </Container>
   );
 };
