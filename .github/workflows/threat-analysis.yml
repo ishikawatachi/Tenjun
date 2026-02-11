@@ -1,0 +1,369 @@
+name: Automated Threat Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**/*.tf'
+      - '**/*.tfvars'
+      - 'infra/**'
+      - 'package*.json'
+      - 'requirements*.txt'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*.tf'
+      - '**/*.tfvars'
+      - 'infra/**'
+      - 'package*.json'
+      - 'requirements*.txt'
+
+env:
+  THREAT_MODEL_API_URL: ${{ secrets.THREAT_MODEL_API_URL || 'http://localhost:5000' }}
+  FAIL_ON_CRITICAL: ${{ vars.FAIL_ON_CRITICAL_THREATS || 'false' }}
+  THREAT_DB_VERSION: 'latest'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  threat-analysis:
+    name: Run Threat Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for change detection
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          npm install axios @actions/github @actions/core dotenv
+          pip install requests pyyaml
+
+      - name: Start Threat Model API (Docker)
+        if: env.THREAT_MODEL_API_URL == 'http://localhost:5000'
+        run: |
+          echo "Starting local threat model API with Docker Compose..."
+          docker-compose -f docker-compose.yml up -d
+          
+          # Wait for API to be ready
+          echo "Waiting for API to start..."
+          timeout 120 bash -c 'until curl -f http://localhost:5000/health; do sleep 2; done'
+          echo "API is ready!"
+
+      - name: Download Threat Database
+        run: |
+          echo "Downloading latest threat database..."
+          mkdir -p .threat-model-cache
+          
+          # Download from threat database repository or API
+          if [ -n "${{ secrets.THREAT_DB_URL }}" ]; then
+            curl -L "${{ secrets.THREAT_DB_URL }}" -o .threat-model-cache/threat-db.tar.gz
+            tar -xzf .threat-model-cache/threat-db.tar.gz -C .threat-model-cache/
+          else
+            echo "Using bundled threat database"
+          fi
+
+      - name: Detect Changed Files
+        id: changed-files
+        run: |
+          echo "Detecting changed Terraform and dependency files..."
+          
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+            HEAD_REF="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+            HEAD_REF="${{ github.sha }}"
+          fi
+          
+          # Get changed files
+          git diff --name-only $BASE_REF $HEAD_REF > changed-files.txt
+          
+          # Filter for relevant files
+          grep -E '\.(tf|tfvars)$|package\.json|requirements\.txt' changed-files.txt > relevant-changes.txt || true
+          
+          CHANGED_COUNT=$(wc -l < relevant-changes.txt)
+          echo "changed_count=$CHANGED_COUNT" >> $GITHUB_OUTPUT
+          
+          echo "Found $CHANGED_COUNT relevant file changes"
+          cat relevant-changes.txt
+
+      - name: Run Threat Analysis
+        id: threat-analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Running threat analysis on infrastructure changes..."
+          chmod +x ./scripts/run-threat-analysis.sh
+          ./scripts/run-threat-analysis.sh
+
+      - name: Parse Threat Analysis Results
+        id: parse-results
+        if: always() && steps.threat-analysis.outcome != 'skipped'
+        run: |
+          echo "Parsing threat analysis results..."
+          
+          if [ -f "threat-report.json" ]; then
+            # Extract key metrics
+            TOTAL_THREATS=$(jq '.total_matched // 0' threat-report.json)
+            CRITICAL_THREATS=$(jq '.statistics.by_severity.critical // 0' threat-report.json)
+            HIGH_THREATS=$(jq '.statistics.by_severity.high // 0' threat-report.json)
+            MEDIUM_THREATS=$(jq '.statistics.by_severity.medium // 0' threat-report.json)
+            LOW_THREATS=$(jq '.statistics.by_severity.low // 0' threat-report.json)
+            AVG_RISK_SCORE=$(jq '.statistics.average_risk_score // 0' threat-report.json)
+            
+            echo "total_threats=$TOTAL_THREATS" >> $GITHUB_OUTPUT
+            echo "critical_threats=$CRITICAL_THREATS" >> $GITHUB_OUTPUT
+            echo "high_threats=$HIGH_THREATS" >> $GITHUB_OUTPUT
+            echo "medium_threats=$MEDIUM_THREATS" >> $GITHUB_OUTPUT
+            echo "low_threats=$LOW_THREATS" >> $GITHUB_OUTPUT
+            echo "avg_risk_score=$AVG_RISK_SCORE" >> $GITHUB_OUTPUT
+            
+            echo "📊 Threat Analysis Results:"
+            echo "  Total Threats: $TOTAL_THREATS"
+            echo "  Critical: $CRITICAL_THREATS"
+            echo "  High: $HIGH_THREATS"
+            echo "  Medium: $MEDIUM_THREATS"
+            echo "  Low: $LOW_THREATS"
+            echo "  Average Risk Score: $AVG_RISK_SCORE"
+          else
+            echo "No threat report found"
+            echo "total_threats=0" >> $GITHUB_OUTPUT
+            echo "critical_threats=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR Comment
+        if: github.event_name == 'pull_request' && steps.parse-results.outputs.total_threats > 0
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const totalThreats = '${{ steps.parse-results.outputs.total_threats }}';
+            const criticalThreats = '${{ steps.parse-results.outputs.critical_threats }}';
+            const highThreats = '${{ steps.parse-results.outputs.high_threats }}';
+            const mediumThreats = '${{ steps.parse-results.outputs.medium_threats }}';
+            const lowThreats = '${{ steps.parse-results.outputs.low_threats }}';
+            const avgRiskScore = '${{ steps.parse-results.outputs.avg_risk_score }}';
+            
+            let threatReport = '## 🔒 Automated Threat Analysis Report\n\n';
+            
+            // Summary badges
+            threatReport += '### Summary\n\n';
+            threatReport += `| Severity | Count |\n`;
+            threatReport += `|----------|-------|\n`;
+            threatReport += `| 🔴 Critical | ${criticalThreats} |\n`;
+            threatReport += `| 🟠 High | ${highThreats} |\n`;
+            threatReport += `| 🟡 Medium | ${mediumThreats} |\n`;
+            threatReport += `| 🟢 Low | ${lowThreats} |\n`;
+            threatReport += `| **Total** | **${totalThreats}** |\n\n`;
+            threatReport += `**Average Risk Score**: ${avgRiskScore}\n\n`;
+            
+            // Add critical threats details if any
+            if (fs.existsSync('threat-report.json')) {
+              const report = JSON.parse(fs.readFileSync('threat-report.json', 'utf8'));
+              
+              if (report.matched_threats && report.matched_threats.length > 0) {
+                const criticalList = report.matched_threats.filter(t => t.severity === 'critical');
+                const highList = report.matched_threats.filter(t => t.severity === 'high');
+                
+                if (criticalList.length > 0) {
+                  threatReport += '### 🔴 Critical Threats\n\n';
+                  criticalList.forEach(threat => {
+                    threatReport += `- **${threat.threat_name}** (${threat.resource_type})\n`;
+                    threatReport += `  - ${threat.description}\n`;
+                    threatReport += `  - Resource: \`${threat.resource_id}\`\n`;
+                    threatReport += `  - Risk Score: ${threat.risk_score}\n\n`;
+                  });
+                }
+                
+                if (highList.length > 0) {
+                  threatReport += '### 🟠 High Severity Threats\n\n';
+                  highList.slice(0, 5).forEach(threat => {
+                    threatReport += `- **${threat.threat_name}** (${threat.resource_type})\n`;
+                    threatReport += `  - ${threat.description}\n`;
+                    threatReport += `  - Resource: \`${threat.resource_id}\`\n\n`;
+                  });
+                  
+                  if (highList.length > 5) {
+                    threatReport += `_... and ${highList.length - 5} more high severity threats_\n\n`;
+                  }
+                }
+              }
+            }
+            
+            threatReport += '### 📋 Actions\n\n';
+            if (criticalThreats > 0) {
+              threatReport += '- ⚠️ **Critical threats detected!** Review and remediate before merging.\n';
+              threatReport += '- GitHub Issues have been created for each critical threat.\n';
+            }
+            threatReport += '- 📄 Full threat report available in workflow artifacts.\n';
+            threatReport += '- 🔍 Review the threat model at `/threat-model/report-${Date.now()}.html`\n\n';
+            threatReport += '---\n';
+            threatReport += '*Generated by [Threat Modeling Platform](https://github.com/threat-model-platform)*\n';
+            
+            // Post comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: threatReport
+            });
+
+      - name: Create GitHub Issues for Critical Threats
+        if: steps.parse-results.outputs.critical_threats > 0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Creating GitHub Issues for critical threats..."
+          chmod +x ./scripts/create-github-issues.js
+          node ./scripts/create-github-issues.js
+
+      - name: Generate Threat Report Artifacts
+        if: always() && steps.threat-analysis.outcome != 'skipped'
+        run: |
+          echo "Generating threat report artifacts..."
+          mkdir -p threat-reports
+          
+          # Copy JSON report
+          if [ -f "threat-report.json" ]; then
+            cp threat-report.json threat-reports/threat-report-${{ github.sha }}.json
+          fi
+          
+          # Generate HTML report
+          if [ -f "threat-report.json" ]; then
+            python3 ./scripts/generate-html-report.py \
+              threat-report.json \
+              threat-reports/threat-report-${{ github.sha }}.html
+          fi
+          
+          # Generate markdown summary
+          if [ -f "threat-report.json" ]; then
+            cat > threat-reports/THREAT_SUMMARY.md << 'EOF'
+          # Threat Analysis Summary
+          
+          **Commit**: ${{ github.sha }}
+          **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Event**: ${{ github.event_name }}
+          
+          ## Results
+          - Total Threats: ${{ steps.parse-results.outputs.total_threats }}
+          - Critical: ${{ steps.parse-results.outputs.critical_threats }}
+          - High: ${{ steps.parse-results.outputs.high_threats }}
+          - Medium: ${{ steps.parse-results.outputs.medium_threats }}
+          - Low: ${{ steps.parse-results.outputs.low_threats }}
+          - Average Risk Score: ${{ steps.parse-results.outputs.avg_risk_score }}
+          
+          ## Files Analyzed
+          $(cat relevant-changes.txt 2>/dev/null || echo "No files changed")
+          
+          EOF
+          fi
+
+      - name: Upload Threat Report Artifact
+        if: always() && steps.threat-analysis.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: threat-analysis-report-${{ github.sha }}
+          path: threat-reports/
+          retention-days: 90
+
+      - name: Commit Threat Model to Repository
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "Committing threat model to repository..."
+          
+          git config user.name "Threat Model Bot"
+          git config user.email "threat-model-bot@users.noreply.github.com"
+          
+          # Create threat-model directory if it doesn't exist
+          mkdir -p docs/threat-model
+          
+          # Copy latest report
+          if [ -f "threat-report.json" ]; then
+            cp threat-report.json "docs/threat-model/threat-model-$(date +%Y%m%d-%H%M%S).json"
+            cp threat-report.json "docs/threat-model/latest.json"
+          fi
+          
+          # Add and commit
+          git add docs/threat-model/
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update threat model [skip ci]"
+            git push
+          fi
+
+      - name: Check Threat Thresholds
+        if: always() && steps.parse-results.outcome != 'skipped'
+        run: |
+          echo "Checking threat thresholds..."
+          
+          CRITICAL_THREATS=${{ steps.parse-results.outputs.critical_threats }}
+          FAIL_ON_CRITICAL="${{ env.FAIL_ON_CRITICAL }}"
+          
+          if [ "$FAIL_ON_CRITICAL" == "true" ] && [ "$CRITICAL_THREATS" -gt 0 ]; then
+            echo "❌ FAILED: $CRITICAL_THREATS critical threat(s) detected!"
+            echo "Review and remediate critical threats before merging."
+            exit 1
+          elif [ "$CRITICAL_THREATS" -gt 0 ]; then
+            echo "⚠️  WARNING: $CRITICAL_THREATS critical threat(s) detected!"
+            echo "Consider remediating before merging."
+          else
+            echo "✅ No critical threats detected!"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up..."
+          
+          # Stop Docker containers if running locally
+          if [ "${{ env.THREAT_MODEL_API_URL }}" == "http://localhost:5000" ]; then
+            docker-compose -f docker-compose.yml down
+          fi
+          
+          # Clean up temporary files
+          rm -f changed-files.txt relevant-changes.txt
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### 🔒 Threat Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Threats**: ${{ steps.parse-results.outputs.total_threats }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Critical**: ${{ steps.parse-results.outputs.critical_threats }}" >> $GITHUB_STEP_SUMMARY
+          echo "**High**: ${{ steps.parse-results.outputs.high_threats }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Medium**: ${{ steps.parse-results.outputs.medium_threats }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Low**: ${{ steps.parse-results.outputs.low_threats }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📄 [Download Full Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
