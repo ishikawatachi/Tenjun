@@ -299,6 +299,261 @@ def terraform_analyze_security():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/threats/match', methods=['POST'])
+def match_threats():
+    """
+    Match infrastructure configuration against threat database
+    
+    Expected JSON body:
+    {
+        "config": {
+            "resources": [...],
+            "cloud_provider": "aws|gcp|azure"
+        },
+        "options": {
+            "filter_by_resource_type": true,
+            "min_severity": "high"
+        }
+    }
+    """
+    try:
+        from threatdb.threat_loader import load_threat_database
+        from threatdb.threat_matcher import match_infrastructure_threats
+        from models.threat import Severity
+        
+        data = request.get_json()
+        
+        if not data or 'config' not in data:
+            return jsonify({'error': 'Missing config parameter'}), 400
+        
+        config = data['config']
+        options = data.get('options', {})
+        
+        # Load threat database
+        loader = load_threat_database()
+        all_threats = loader.get_all_threats()
+        
+        # Match threats
+        result = match_infrastructure_threats(
+            config=config,
+            threats=all_threats,
+            filter_by_resource_type=options.get('filter_by_resource_type', True)
+        )
+        
+        # Filter by minimum severity if specified
+        min_severity = options.get('min_severity')
+        if min_severity:
+            try:
+                min_sev_enum = Severity[min_severity.upper()]
+                filtered_threats = [
+                    t for t in result.matched_threats
+                    if Severity[t.severity.upper()].score >= min_sev_enum.score
+                ]
+                result.matched_threats = filtered_threats
+                result.total_matched = len(filtered_threats)
+            except KeyError:
+                return jsonify({'error': f'Invalid severity: {min_severity}'}), 400
+        
+        # Convert to JSON-serializable format
+        response = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'total_matched': result.total_matched,
+            'total_resources': result.total_resources,
+            'matched_threats': [
+                {
+                    'threat_id': t.threat_id,
+                    'threat_name': t.threat.name,
+                    'description': t.threat.description,
+                    'severity': t.severity,
+                    'likelihood': t.threat.likelihood.name.lower(),
+                    'risk_score': t.risk_score,
+                    'category': t.threat.category,
+                    'resource_id': t.resource_id,
+                    'resource_type': t.resource_type,
+                    'cloud_provider': t.cloud_provider,
+                    'matched_conditions': [
+                        {
+                            'field': c.field,
+                            'operator': c.operator,
+                            'value': c.value
+                        }
+                        for c in t.matched_conditions
+                    ],
+                    'mitigations': [
+                        {
+                            'description': m.description,
+                            'effort': m.effort,
+                            'impact': m.impact,
+                            'steps': m.steps
+                        }
+                        for m in t.threat.mitigations
+                    ],
+                    'compliance_mappings': [
+                        {
+                            'framework': c.framework,
+                            'control_id': c.control_id,
+                            'description': c.description
+                        }
+                        for c in t.threat.compliance_mappings
+                    ],
+                    'references': t.threat.references
+                }
+                for t in result.matched_threats
+            ],
+            'statistics': {
+                'by_severity': result.statistics.by_severity,
+                'by_category': result.statistics.by_category,
+                'by_resource_type': result.statistics.by_resource_type,
+                'by_cloud_provider': result.statistics.by_cloud_provider,
+                'average_risk_score': result.statistics.average_risk_score
+            }
+        }
+        
+        logger.info(f"Threat matching completed: {result.total_matched} threats found")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error matching threats: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/threats/database/stats', methods=['GET'])
+def get_threat_database_stats():
+    """
+    Get threat database statistics
+    """
+    try:
+        from threatdb.threat_loader import load_threat_database
+        
+        loader = load_threat_database()
+        stats = loader.get_statistics()
+        
+        response = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'total_threats': stats['total_threats'],
+            'by_severity': stats['by_severity'],
+            'by_category': stats['by_category'],
+            'by_resource_type': stats['by_resource_type'],
+            'by_cloud_provider': stats['by_cloud_provider'],
+            'supported_resource_types': sorted(stats['by_resource_type'].keys()),
+            'supported_cloud_providers': sorted(stats['by_cloud_provider'].keys()),
+            'database_path': str(loader.db_path)
+        }
+        
+        logger.info(f"Threat database stats retrieved: {stats['total_threats']} threats")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting threat database stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/threats/<threat_id>', methods=['GET'])
+def get_threat_by_id(threat_id):
+    """
+    Get specific threat by ID
+    """
+    try:
+        from threatdb.threat_loader import load_threat_database
+        
+        loader = load_threat_database()
+        threat = loader.get_threat_by_id(threat_id)
+        
+        if not threat:
+            return jsonify({'error': f'Threat not found: {threat_id}'}), 404
+        
+        response = {
+            'id': threat.id,
+            'name': threat.name,
+            'description': threat.description,
+            'severity': threat.severity.name.lower(),
+            'severity_score': threat.severity.score,
+            'likelihood': threat.likelihood.name.lower(),
+            'likelihood_score': threat.likelihood.score,
+            'category': threat.category,
+            'resource_types': threat.resource_types,
+            'cloud_providers': threat.cloud_providers,
+            'conditions': {
+                'logic': threat.conditions.logic,
+                'conditions': [
+                    {
+                        'field': c.field,
+                        'operator': c.operator,
+                        'value': c.value
+                    }
+                    for c in threat.conditions.conditions
+                ]
+            } if threat.conditions else None,
+            'mitigations': [
+                {
+                    'description': m.description,
+                    'effort': m.effort,
+                    'impact': m.impact,
+                    'steps': m.steps
+                }
+                for m in threat.mitigations
+            ],
+            'compliance_mappings': [
+                {
+                    'framework': c.framework,
+                    'control_id': c.control_id,
+                    'description': c.description
+                }
+                for c in threat.compliance_mappings
+            ],
+            'attack_vectors': threat.attack_vectors,
+            'exploitability': threat.exploitability,
+            'business_impact': threat.business_impact,
+            'references': threat.references,
+            'tags': threat.tags
+        }
+        
+        logger.info(f"Retrieved threat: {threat_id}")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting threat by ID: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/threats/resource-types/<resource_type>', methods=['GET'])
+def get_threats_for_resource_type(resource_type):
+    """
+    Get all threats applicable to a specific resource type
+    """
+    try:
+        from threatdb.threat_loader import load_threat_database
+        
+        loader = load_threat_database()
+        threats = loader.get_threats_by_resource_type(resource_type)
+        
+        response = {
+            'resource_type': resource_type,
+            'threat_count': len(threats),
+            'threats': [
+                {
+                    'id': t.id,
+                    'name': t.name,
+                    'description': t.description,
+                    'severity': t.severity.name.lower(),
+                    'likelihood': t.likelihood.name.lower(),
+                    'category': t.category,
+                    'cloud_providers': t.cloud_providers
+                }
+                for t in threats
+            ]
+        }
+        
+        logger.info(f"Retrieved {len(threats)} threats for resource type: {resource_type}")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting threats for resource type: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """404 error handler"""

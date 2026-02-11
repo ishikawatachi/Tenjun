@@ -1,0 +1,111 @@
+# AWS Compute Threats
+# Threat definitions for AWS EC2 and compute resources
+
+threats:
+  - id: AWS-EC2-001
+    name: EC2 Instance with Public IP
+    description: |
+      EC2 instance is configured with a public IP address, making it
+      directly accessible from the internet. This increases attack surface
+      and exposes the instance to port scanning and exploitation attempts.
+    severity: medium
+    likelihood: likely
+    category: Network Exposure
+    resource_types:
+      - aws_instance
+    cloud_providers:
+      - aws
+    conditions:
+      logic: or
+      conditions:
+        - field: properties.associate_public_ip_address
+          operator: "=="
+          value: true
+        - field: properties.public_ip
+          operator: exists
+          value: null
+    attack_vectors:
+      - Port scanning and service enumeration
+      - Exploitation of vulnerable services
+      - Brute force SSH/RDP attacks
+      - DDoS attacks
+    exploitability: high
+    business_impact: medium
+    mitigations:
+      - description: Use private IP addresses
+        effort: medium
+        impact: high
+        steps:
+          - Place instances in private subnets
+          - Access via VPN or bastion host
+          - Use AWS Systems Manager Session Manager for secure access
+          - Remove associate_public_ip_address setting
+    references:
+      - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html
+    compliance_mappings:
+      - framework: CIS
+        control_id: "5.1"
+        description: Ensure no security groups allow ingress from 0.0.0.0/0 to port 22
+    tags:
+      - public-ip
+      - network-security
+      - ec2
+
+  - id: AWS-SG-001
+    name: Security Group Allows SSH from Internet
+    description: |
+      Security group allows SSH access (port 22) from any IP address (0.0.0.0/0).
+      This exposes instances to brute force attacks and unauthorized access attempts.
+    severity: critical
+    likelihood: certain
+    category: Access Control
+    resource_types:
+      - aws_security_group
+    cloud_providers:
+      - aws
+    conditions:
+      logic: and
+      conditions:
+        - field: properties.ingress
+          operator: contains
+          value:
+            from_port: 22
+            cidr_blocks: ["0.0.0.0/0"]
+    attack_vectors:
+      - Brute force SSH password attacks
+      - SSH key compromise exploitation
+      - Zero-day SSH vulnerabilities
+      - Credential stuffing attacks
+    exploitability: high
+    business_impact: critical
+    mitigations:
+      - description: Restrict SSH access to specific IPs
+        effort: low
+        impact: high
+        steps:
+          - Update security group ingress rules
+          - Allow SSH only from known IP ranges (office, VPN)
+          - Use AWS Systems Manager Session Manager instead
+          - Implement SSH key rotation policy
+      - description: Use AWS Systems Manager
+        effort: medium
+        impact: high
+        steps:
+          - Remove SSH ingress rule entirely
+          - Install SSM agent on instances
+          - Use Session Manager for secure shell access
+          - Enable session logging to CloudWatch
+    references:
+      - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules.html
+    compliance_mappings:
+      - framework: CIS
+        control_id: "5.1"
+        description: Ensure no security groups allow ingress from 0.0.0.0/0 to port 22
+      - framework: NIST
+        control_id: AC-4
+        description: Information Flow Enforcement
+    tags:
+      - ssh
+      - security-group
+      - remote-access
+      - critical

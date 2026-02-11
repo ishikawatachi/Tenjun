@@ -1,0 +1,156 @@
+# GCP Cloud SQL Threats
+# Threat definitions for Google Cloud SQL database instances
+
+threats:
+  - id: GCP-SQL-001
+    name: Cloud SQL Instance Publicly Accessible
+    description: |
+      Cloud SQL database instance is configured with public IP and allows
+      connections from the internet (0.0.0.0/0). This exposes the database
+      to potential unauthorized access and brute force attacks.
+    severity: high
+    likelihood: likely
+    category: Data Exposure
+    resource_types:
+      - google_sql_database_instance
+    cloud_providers:
+      - gcp
+    conditions:
+      logic: and
+      conditions:
+        - field: properties.settings.ip_configuration.ipv4_enabled
+          operator: "=="
+          value: true
+        - field: properties.settings.ip_configuration.authorized_networks
+          operator: contains
+          value:
+            value: "0.0.0.0/0"
+    attack_vectors:
+      - Internet-based brute force attacks
+      - SQL injection if application is vulnerable
+      - Credential theft and reuse
+    exploitability: high
+    business_impact: high
+    mitigations:
+      - description: Disable public IP access
+        effort: low
+        impact: high
+        steps:
+          - Set ipv4_enabled to false in Terraform
+          - Use Cloud SQL Proxy or Private IP for connections
+          - Implement VPN or Cloud Interconnect for remote access
+      - description: Restrict authorized networks
+        effort: low
+        impact: medium
+        steps:
+          - Remove 0.0.0.0/0 from authorized_networks
+          - Add only specific IP ranges that need access
+          - Implement IP allowlisting for known locations
+    references:
+      - https://cloud.google.com/sql/docs/mysql/configure-ip
+      - https://cloud.google.com/sql/docs/mysql/best-practices
+    compliance_mappings:
+      - framework: CIS
+        control_id: "6.2"
+        description: Ensure that Cloud SQL database instances are not open to the internet
+      - framework: NIST
+        control_id: AC-3
+        description: Access Enforcement
+    tags:
+      - public-access
+      - database
+      - network-security
+
+  - id: GCP-SQL-002
+    name: Cloud SQL Backup Not Enabled
+    description: |
+      Cloud SQL database instance does not have automated backups enabled.
+      This increases the risk of data loss in case of accidental deletion,
+      corruption, or ransomware attacks.
+    severity: medium
+    likelihood: possible
+    category: Data Loss
+    resource_types:
+      - google_sql_database_instance
+    cloud_providers:
+      - gcp
+    conditions:
+      logic: or
+      conditions:
+        - field: properties.settings.backup_configuration.enabled
+          operator: "=="
+          value: false
+        - field: properties.settings.backup_configuration.enabled
+          operator: not_exists
+          value: null
+    attack_vectors:
+      - Ransomware encryption of database
+      - Accidental deletion by administrator
+      - Data corruption from software bugs
+    exploitability: medium
+    business_impact: high
+    mitigations:
+      - description: Enable automated backups
+        effort: low
+        impact: high
+        steps:
+          - Set backup_configuration.enabled to true
+          - Configure backup start time during low-traffic period
+          - Enable point-in-time recovery for critical databases
+          - Set appropriate backup retention period
+    references:
+      - https://cloud.google.com/sql/docs/mysql/backup-recovery/backups
+    compliance_mappings:
+      - framework: CIS
+        control_id: "6.7"
+        description: Ensure that Cloud SQL database instances have backups enabled
+    tags:
+      - backup
+      - disaster-recovery
+      - data-protection
+
+  - id: GCP-SQL-003
+    name: Cloud SQL Deletion Protection Disabled
+    description: |
+      Cloud SQL database instance does not have deletion protection enabled.
+      This allows accidental or malicious deletion of the database instance
+      without additional safeguards.
+    severity: medium
+    likelihood: unlikely
+    category: Data Loss
+    resource_types:
+      - google_sql_database_instance
+    cloud_providers:
+      - gcp
+    conditions:
+      logic: or
+      conditions:
+        - field: properties.deletion_protection
+          operator: "=="
+          value: false
+        - field: properties.deletion_protection
+          operator: not_exists
+          value: null
+    attack_vectors:
+      - Malicious insider deletion
+      - Accidental deletion during maintenance
+      - Compromised administrator credentials
+    exploitability: low
+    business_impact: critical
+    mitigations:
+      - description: Enable deletion protection
+        effort: low
+        impact: high
+        steps:
+          - Set deletion_protection to true in Terraform
+          - Implement change approval process for infrastructure
+          - Use separate credentials for deletion operations
+    references:
+      - https://cloud.google.com/sql/docs/mysql/delete-instance
+    compliance_mappings:
+      - framework: NIST
+        control_id: CP-9
+        description: Information System Backup
+    tags:
+      - deletion-protection
+      - data-protection
