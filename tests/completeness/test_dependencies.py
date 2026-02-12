@@ -65,14 +65,12 @@ class TestFrontendDependencies:
         assert "test" in frontend_pkg.get("scripts", {})
 
     def test_frontend_testing_deps_placement(self, frontend_pkg: dict):
-        """Warn if testing libraries are in dependencies (should be devDependencies)."""
+        """Verify testing libraries are in devDependencies, not dependencies."""
         deps = frontend_pkg.get("dependencies", {})
         testing_in_deps = [k for k in deps if "testing-library" in k or k.startswith("@types/")]
-        if testing_in_deps:
-            pytest.xfail(
-                f"Testing/type packages in dependencies instead of devDependencies: "
-                f"{', '.join(testing_in_deps)}"
-            )
+        assert not testing_in_deps, \
+            f"Testing/type packages should be in devDependencies, not dependencies: " \
+            f"{', '.join(testing_in_deps)}"
 
 
 # ─── Backend Root Dependencies ────────────────────────────────────────────────
@@ -85,12 +83,6 @@ class TestBackendDependencies:
         return json.loads((backend_dir / "package.json").read_text())
 
     @pytest.mark.parametrize("package", [
-        "express",
-        "cors",
-        "helmet",
-        "dotenv",
-        "better-sqlite3",
-        "axios",
         "morgan",
         "socket.io",
     ])
@@ -238,11 +230,8 @@ class TestLockFiles:
             or (backend_api_dir / "yarn.lock").exists()
             or (backend_api_dir / "pnpm-lock.yaml").exists()
         )
-        if not has_lock:
-            pytest.xfail(
-                "backend/api/ has its own package.json but no lock file — "
-                "npm ci will fail in this subdirectory"
-            )
+        assert has_lock, \
+            "backend/api/ has its own package.json but no lock file — npm ci will fail"
 
 
 # ─── Duplicate Dependency Detection ──────────────────────────────────────────
@@ -251,7 +240,7 @@ class TestDuplicateDependencies:
     """Detect overlapping dependencies between backend packages."""
 
     def test_backend_vs_api_duplicate_deps(self, backend_dir: Path, backend_api_dir: Path):
-        """Report duplicate dependencies between backend/ and backend/api/."""
+        """Verify no duplicate dependencies between backend/ and backend/api/."""
         backend_pkg = json.loads((backend_dir / "package.json").read_text())
         api_pkg = json.loads((backend_api_dir / "package.json").read_text())
 
@@ -259,8 +248,6 @@ class TestDuplicateDependencies:
         api_deps = set(api_pkg.get("dependencies", {}).keys())
 
         duplicates = backend_deps & api_deps
-        if duplicates:
-            pytest.xfail(
-                f"Duplicate dependencies in backend/ and backend/api/: "
-                f"{', '.join(sorted(duplicates))}"
-            )
+        assert not duplicates, \
+            f"Duplicate dependencies in backend/ and backend/api/: " \
+            f"{', '.join(sorted(duplicates))}"

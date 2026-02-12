@@ -23,7 +23,6 @@
     "bcrypt": "^5.1.1",
     "zod": "^3.22.4",
     "better-sqlite3": "^9.2.2",
-    "sqlcipher": "^5.1.2",
     "winston": "^3.11.0",
     "express-rate-limit": "^7.1.5",
     "swagger-ui-express": "^5.0.0",

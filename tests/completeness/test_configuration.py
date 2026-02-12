@@ -83,8 +83,8 @@ class TestDockerCompose:
         for v in volumes:
             if isinstance(v, str) and "nginx" in v and ".conf" in v:
                 host_path = v.split(":")[0].lstrip("./")
-                if not (project_root / host_path).exists():
-                    pytest.xfail(f"Dev compose references missing file: {host_path}")
+                assert (project_root / host_path).exists(), \
+                    f"Dev compose references missing file: {host_path}"
 
 
 # ─── Dockerfile Validation ───────────────────────────────────────────────────
@@ -164,12 +164,10 @@ class TestTypeScriptConfig:
         except json.JSONDecodeError:
             return  # Can't parse, skip
 
-        if is_esm and module_setting == "commonjs":
-            pytest.xfail(
-                "Module system conflict: backend/package.json has 'type: module' (ESM) "
-                "but backend/api/tsconfig.json compiles to CommonJS. "
-                "Node.js will try to parse CJS output as ESM and fail."
-            )
+        if is_esm:
+            assert module_setting != "commonjs", \
+                "Module system conflict: backend/package.json has 'type: module' (ESM) " \
+                "but backend/api/tsconfig.json compiles to CommonJS."
 
 
 # ─── Port & URL Consistency ──────────────────────────────────────────────────
@@ -198,11 +196,10 @@ class TestPortConsistency:
                 match = re.search(r':(\d+)', line.split("=", 1)[-1] if "=" in line else "")
                 if match:
                     env_port = match.group(1)
-                    if compose_port and env_port != compose_port:
-                        pytest.xfail(
-                            f"Port mismatch: .env.example has analysis on port {env_port}, "
+                    if compose_port:
+                        assert env_port == compose_port, \
+                            f"Port mismatch: .env.example has analysis on port {env_port}, " \
                             f"docker-compose exposes port {compose_port}"
-                        )
 
     def test_api_port_consistency(self, project_root: Path):
         """Verify API port is consistent between compose and env."""
