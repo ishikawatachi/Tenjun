@@ -1,0 +1,3 @@
+# Completeness tests require only stdlib + these:
+pytest>=7.4.0
+pyyaml>=6.0

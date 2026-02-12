@@ -1,0 +1,57 @@
+name: Completeness Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  completeness-tests:
+    name: Project Completeness Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: tests/completeness/requirements.txt
+
+      - name: Install test dependencies
+        run: pip install -r tests/completeness/requirements.txt
+
+      - name: Run completeness tests
+        run: |
+          pytest tests/completeness/ \
+            -v \
+            --tb=short \
+            --no-header \
+            -rXfp \
+            --junitxml=test-results/completeness.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: completeness-test-results
+          path: test-results/completeness.xml
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## Completeness Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          pytest tests/completeness/ \
+            --tb=line \
+            -q \
+            -rXfp 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY || true
